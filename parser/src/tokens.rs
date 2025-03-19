@@ -1,3 +1,4 @@
+use proc_macro2::Literal;
 use std::fmt::Debug;
 use syn::{
     Expr, Ident, Token,
@@ -168,6 +169,10 @@ impl Debug for Prop {
 }
 
 impl Parse for Prop {
+
+    // {name}={value}
+    // TODO: {name} (implies value=true)
+
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
         let name = input
             .parse::<Ident>()
@@ -175,9 +180,17 @@ impl Parse for Prop {
         input
             .parse::<Token![=]>()
             .map_err(|e| er!(input, "Missing token equals '=': {:?}", e))?;
-        let value = input
-            .parse::<Expr>()
-            .map_err(|e| er!(input, "Missing prop value: {:?}", e))?;
+
+        let value = try_rw!(input, Expr)
+            .or_else(|| {
+                try_rw!(input, Literal).map(|v| {
+                    Expr::Lit(syn::ExprLit {
+                        attrs: Vec::new(),
+                        lit: syn::Lit::Verbatim(v),
+                    })
+                })
+            })
+            .ok_or(er!(input, "Missing prop value: {:?}", ":("))?;
 
         Ok(Prop { name, value })
     }

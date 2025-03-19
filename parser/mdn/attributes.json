@@ -1,0 +1,2211 @@
+[
+    {
+        "attr": "abbr",
+        "tags": [
+            "td",
+            "th"
+        ],
+        "type": "%Text;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "abbreviation for header cell"
+    },
+    {
+        "attr": "accept-charset",
+        "tags": [
+            "form"
+        ],
+        "type": "%Charsets;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "list of supported charsets"
+    },
+    {
+        "attr": "accept",
+        "tags": [
+            "form",
+            "input"
+        ],
+        "type": "%ContentTypes;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "list of MIME types for file upload"
+    },
+    {
+        "attr": "accesskey",
+        "tags": [
+            "a",
+            "area",
+            "button",
+            "input",
+            "label",
+            "legend",
+            "textarea"
+        ],
+        "type": "%Character;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "accessibility key character"
+    },
+    {
+        "attr": "action",
+        "tags": [
+            "form"
+        ],
+        "type": "%URI;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "server-side form handler"
+    },
+    {
+        "attr": "align",
+        "tags": [
+            "caption"
+        ],
+        "type": "%CAlign;",
+        "depreciated": true,
+        "dtd": true,
+        "comment": "relative to table"
+    },
+    {
+        "attr": "align",
+        "tags": [
+            "applet",
+            "iframe",
+            "img",
+            "input",
+            "object"
+        ],
+        "type": "%IAlign;",
+        "depreciated": true,
+        "dtd": true,
+        "comment": "vertical or horizontal alignment"
+    },
+    {
+        "attr": "align",
+        "tags": [
+            "legend"
+        ],
+        "type": "%LAlign;",
+        "depreciated": true,
+        "dtd": true,
+        "comment": "relative to fieldset"
+    },
+    {
+        "attr": "align",
+        "tags": [
+            "table"
+        ],
+        "type": "%TAlign;",
+        "depreciated": true,
+        "dtd": true,
+        "comment": "table position relative to window"
+    },
+    {
+        "attr": "align",
+        "tags": [
+            "hr"
+        ],
+        "type": "(left | center | right)",
+        "depreciated": true,
+        "dtd": true,
+        "comment": ""
+    },
+    {
+        "attr": "align",
+        "tags": [
+            "div",
+            "h1",
+            "h2",
+            "h3",
+            "h4",
+            "h5",
+            "h6",
+            "p"
+        ],
+        "type": "(left | center | right | justify)",
+        "depreciated": true,
+        "dtd": true,
+        "comment": "align, text alignment"
+    },
+    {
+        "attr": "align",
+        "tags": [
+            "col",
+            "colgroup",
+            "tbody",
+            "td",
+            "tfoot",
+            "th",
+            "thead",
+            "tr"
+        ],
+        "type": "(left | center | right | justify | char)",
+        "depreciated": false,
+        "dtd": false,
+        "comment": ""
+    },
+    {
+        "attr": "alink",
+        "tags": [
+            "body"
+        ],
+        "type": "%Color;",
+        "depreciated": true,
+        "dtd": true,
+        "comment": "color of selected links"
+    },
+    {
+        "attr": "alt",
+        "tags": [
+            "applet"
+        ],
+        "type": "%Text;",
+        "depreciated": true,
+        "dtd": true,
+        "comment": "short description"
+    },
+    {
+        "attr": "alt",
+        "tags": [
+            "area",
+            "img"
+        ],
+        "type": "%Text;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "short description"
+    },
+    {
+        "attr": "alt",
+        "tags": [
+            "input"
+        ],
+        "type": "CDATA",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "short description"
+    },
+    {
+        "attr": "archive",
+        "tags": [
+            "applet"
+        ],
+        "type": "CDATA",
+        "depreciated": true,
+        "dtd": true,
+        "comment": "comma-separated archive list"
+    },
+    {
+        "attr": "archive",
+        "tags": [
+            "object"
+        ],
+        "type": "CDATA",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "space-separated list of URIs"
+    },
+    {
+        "attr": "axis",
+        "tags": [
+            "td",
+            "th"
+        ],
+        "type": "CDATA",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "comma-separated list of related headers"
+    },
+    {
+        "attr": "background",
+        "tags": [
+            "body"
+        ],
+        "type": "%URI;",
+        "depreciated": true,
+        "dtd": true,
+        "comment": "texture tile for document background"
+    },
+    {
+        "attr": "bgcolor",
+        "tags": [
+            "table"
+        ],
+        "type": "%Color;",
+        "depreciated": true,
+        "dtd": true,
+        "comment": "background color for cells"
+    },
+    {
+        "attr": "bgcolor",
+        "tags": [
+            "tr"
+        ],
+        "type": "%Color;",
+        "depreciated": true,
+        "dtd": true,
+        "comment": "background color for row"
+    },
+    {
+        "attr": "bgcolor",
+        "tags": [
+            "td",
+            "th"
+        ],
+        "type": "%Color;",
+        "depreciated": true,
+        "dtd": true,
+        "comment": "cell background color"
+    },
+    {
+        "attr": "bgcolor",
+        "tags": [
+            "body"
+        ],
+        "type": "%Color;",
+        "depreciated": true,
+        "dtd": true,
+        "comment": "document background color"
+    },
+    {
+        "attr": "border",
+        "tags": [
+            "table"
+        ],
+        "type": "%Pixels;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "controls frame width around table"
+    },
+    {
+        "attr": "border",
+        "tags": [
+            "img",
+            "object"
+        ],
+        "type": "%Pixels;",
+        "depreciated": true,
+        "dtd": true,
+        "comment": "link border width"
+    },
+    {
+        "attr": "cellpadding",
+        "tags": [
+            "table"
+        ],
+        "type": "%Length;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "spacing within cells"
+    },
+    {
+        "attr": "cellspacing",
+        "tags": [
+            "table"
+        ],
+        "type": "%Length;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "spacing between cells"
+    },
+    {
+        "attr": "char",
+        "tags": [
+            "col",
+            "colgroup",
+            "tbody",
+            "td",
+            "tfoot",
+            "th",
+            "thead",
+            "tr"
+        ],
+        "type": "%Character;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "alignment char, e.g. char=':'"
+    },
+    {
+        "attr": "charoff",
+        "tags": [
+            "col",
+            "colgroup",
+            "tbody",
+            "td",
+            "tfoot",
+            "th",
+            "thead",
+            "tr"
+        ],
+        "type": "%Length;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "offset for alignment char"
+    },
+    {
+        "attr": "charset",
+        "tags": [
+            "a",
+            "link",
+            "script"
+        ],
+        "type": "%Charset;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "char encoding of linked resource"
+    },
+    {
+        "attr": "checked",
+        "tags": [
+            "input"
+        ],
+        "type": "(checked)",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "for radio buttons and check boxes"
+    },
+    {
+        "attr": "cite",
+        "tags": [
+            "blockquote",
+            "q"
+        ],
+        "type": "%URI;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "URI for source document or msg"
+    },
+    {
+        "attr": "cite",
+        "tags": [
+            "del",
+            "ins"
+        ],
+        "type": "%URI;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "info on reason for change"
+    },
+    {
+        "attr": "class",
+        "tags": [
+            "all elements but base",
+            "basefont",
+            "head",
+            "html",
+            "meta",
+            "param",
+            "script",
+            "style",
+            "title"
+        ],
+        "type": "CDATA",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "space-separated list of classes"
+    },
+    {
+        "attr": "classid",
+        "tags": [
+            "object"
+        ],
+        "type": "%URI;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "identifies an implementation"
+    },
+    {
+        "attr": "clear",
+        "tags": [
+            "br"
+        ],
+        "type": "(left | all | right | none)",
+        "depreciated": true,
+        "dtd": true,
+        "comment": "control of text flow"
+    },
+    {
+        "attr": "code",
+        "tags": [
+            "applet"
+        ],
+        "type": "CDATA",
+        "depreciated": true,
+        "dtd": true,
+        "comment": "applet class file"
+    },
+    {
+        "attr": "codebase",
+        "tags": [
+            "object"
+        ],
+        "type": "%URI;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "base URI for classid, data, archive"
+    },
+    {
+        "attr": "codebase",
+        "tags": [
+            "applet"
+        ],
+        "type": "%URI;",
+        "depreciated": true,
+        "dtd": true,
+        "comment": "optional base URI for applet"
+    },
+    {
+        "attr": "codetype",
+        "tags": [
+            "object"
+        ],
+        "type": "%ContentType;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "content type for code"
+    },
+    {
+        "attr": "color",
+        "tags": [
+            "basefont",
+            "font"
+        ],
+        "type": "%Color;",
+        "depreciated": true,
+        "dtd": true,
+        "comment": "text color"
+    },
+    {
+        "attr": "cols",
+        "tags": [
+            "frameset"
+        ],
+        "type": "%MultiLengths;",
+        "depreciated": false,
+        "dtd": true,
+        "comment": "list of lengths, default: 100% (1 col)"
+    },
+    {
+        "attr": "cols",
+        "tags": [
+            "textarea"
+        ],
+        "type": "NUMBER",
+        "depreciated": false,
+        "dtd": false,
+        "comment": ""
+    },
+    {
+        "attr": "colspan",
+        "tags": [
+            "td",
+            "th"
+        ],
+        "type": "NUMBER",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "number of cols spanned by cell"
+    },
+    {
+        "attr": "compact",
+        "tags": [
+            "dir",
+            "dl",
+            "menu",
+            "ol",
+            "ul"
+        ],
+        "type": "(compact)",
+        "depreciated": true,
+        "dtd": true,
+        "comment": "reduced interitem spacing"
+    },
+    {
+        "attr": "content",
+        "tags": [
+            "meta"
+        ],
+        "type": "CDATA",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "associated information"
+    },
+    {
+        "attr": "coords",
+        "tags": [
+            "area"
+        ],
+        "type": "%Coords;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "comma-separated list of lengths"
+    },
+    {
+        "attr": "coords",
+        "tags": [
+            "a"
+        ],
+        "type": "%Coords;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "for use with client-side image maps"
+    },
+    {
+        "attr": "data",
+        "tags": [
+            "object"
+        ],
+        "type": "%URI;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "reference to object's data"
+    },
+    {
+        "attr": "datetime",
+        "tags": [
+            "del",
+            "ins"
+        ],
+        "type": "%Datetime;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "date and time of change"
+    },
+    {
+        "attr": "declare",
+        "tags": [
+            "object"
+        ],
+        "type": "(declare)",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "declare but don't instantiate flag"
+    },
+    {
+        "attr": "defer",
+        "tags": [
+            "script"
+        ],
+        "type": "(defer)",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "UA may defer execution of script"
+    },
+    {
+        "attr": "dir",
+        "tags": [
+            "all elements but applet",
+            "base",
+            "basefont",
+            "bdo",
+            "br",
+            "frame",
+            "frameset",
+            "iframe",
+            "param",
+            "script"
+        ],
+        "type": "(ltr | rtl)",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "direction for weak/neutral text"
+    },
+    {
+        "attr": "dir",
+        "tags": [
+            "bdo"
+        ],
+        "type": "(ltr | rtl)",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "directionality"
+    },
+    {
+        "attr": "disabled",
+        "tags": [
+            "button",
+            "input",
+            "optgroup",
+            "option",
+            "select",
+            "textarea"
+        ],
+        "type": "(disabled)",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "unavailable in this context"
+    },
+    {
+        "attr": "enctype",
+        "tags": [
+            "form"
+        ],
+        "type": "%ContentType;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": ""
+    },
+    {
+        "attr": "face",
+        "tags": [
+            "basefont",
+            "font"
+        ],
+        "type": "CDATA",
+        "depreciated": true,
+        "dtd": true,
+        "comment": "comma-separated list of font names"
+    },
+    {
+        "attr": "for",
+        "tags": [
+            "label"
+        ],
+        "type": "IDREF",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "matches field ID value"
+    },
+    {
+        "attr": "frame",
+        "tags": [
+            "table"
+        ],
+        "type": "%TFrame;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "which parts of frame to render"
+    },
+    {
+        "attr": "frameborder",
+        "tags": [
+            "frame",
+            "iframe"
+        ],
+        "type": "(1 | 0)",
+        "depreciated": false,
+        "dtd": true,
+        "comment": "request frame borders?"
+    },
+    {
+        "attr": "headers",
+        "tags": [
+            "td",
+            "th"
+        ],
+        "type": "IDREFS",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "list of id's for header cells"
+    },
+    {
+        "attr": "height",
+        "tags": [
+            "iframe"
+        ],
+        "type": "%Length;",
+        "depreciated": false,
+        "dtd": true,
+        "comment": "frame height"
+    },
+    {
+        "attr": "height",
+        "tags": [
+            "td",
+            "th"
+        ],
+        "type": "%Length;",
+        "depreciated": true,
+        "dtd": true,
+        "comment": "height for cell"
+    },
+    {
+        "attr": "height",
+        "tags": [
+            "img",
+            "object"
+        ],
+        "type": "%Length;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "override height"
+    },
+    {
+        "attr": "height",
+        "tags": [
+            "applet"
+        ],
+        "type": "%Length;",
+        "depreciated": true,
+        "dtd": true,
+        "comment": "initial height"
+    },
+    {
+        "attr": "href",
+        "tags": [
+            "a",
+            "area",
+            "link"
+        ],
+        "type": "%URI;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "URI for linked resource"
+    },
+    {
+        "attr": "href",
+        "tags": [
+            "base"
+        ],
+        "type": "%URI;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "URI that acts as base URI"
+    },
+    {
+        "attr": "hreflang",
+        "tags": [
+            "a",
+            "link"
+        ],
+        "type": "%LanguageCode;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "language code"
+    },
+    {
+        "attr": "hspace",
+        "tags": [
+            "applet",
+            "img",
+            "object"
+        ],
+        "type": "%Pixels;",
+        "depreciated": true,
+        "dtd": true,
+        "comment": "horizontal gutter"
+    },
+    {
+        "attr": "http-equiv",
+        "tags": [
+            "meta"
+        ],
+        "type": "NAME",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "HTTP response header name"
+    },
+    {
+        "attr": "id",
+        "tags": [
+            "all elements but base",
+            "head",
+            "html",
+            "meta",
+            "script",
+            "style",
+            "title"
+        ],
+        "type": "ID",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "document-wide unique id"
+    },
+    {
+        "attr": "ismap",
+        "tags": [
+            "img",
+            "input"
+        ],
+        "type": "(ismap)",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "use server-side image map"
+    },
+    {
+        "attr": "label",
+        "tags": [
+            "option"
+        ],
+        "type": "%Text;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "for use in hierarchical menus"
+    },
+    {
+        "attr": "label",
+        "tags": [
+            "optgroup"
+        ],
+        "type": "%Text;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "for use in hierarchical menus"
+    },
+    {
+        "attr": "lang",
+        "tags": [
+            "all elements but applet",
+            "base",
+            "basefont",
+            "br",
+            "frame",
+            "frameset",
+            "iframe",
+            "param",
+            "script"
+        ],
+        "type": "%LanguageCode;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "language code"
+    },
+    {
+        "attr": "language",
+        "tags": [
+            "script"
+        ],
+        "type": "CDATA",
+        "depreciated": true,
+        "dtd": true,
+        "comment": "predefined script language name"
+    },
+    {
+        "attr": "link",
+        "tags": [
+            "body"
+        ],
+        "type": "%Color;",
+        "depreciated": true,
+        "dtd": true,
+        "comment": "color of links"
+    },
+    {
+        "attr": "longdesc",
+        "tags": [
+            "img"
+        ],
+        "type": "%URI;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "link to long description (complements alt)"
+    },
+    {
+        "attr": "longdesc",
+        "tags": [
+            "frame",
+            "iframe"
+        ],
+        "type": "%URI;",
+        "depreciated": false,
+        "dtd": true,
+        "comment": "link to long description (complements title)"
+    },
+    {
+        "attr": "marginheight",
+        "tags": [
+            "frame",
+            "iframe"
+        ],
+        "type": "%Pixels;",
+        "depreciated": false,
+        "dtd": true,
+        "comment": "margin height in pixels"
+    },
+    {
+        "attr": "marginwidth",
+        "tags": [
+            "frame",
+            "iframe"
+        ],
+        "type": "%Pixels;",
+        "depreciated": false,
+        "dtd": true,
+        "comment": "margin widths in pixels"
+    },
+    {
+        "attr": "maxlength",
+        "tags": [
+            "input"
+        ],
+        "type": "NUMBER",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "max chars for text fields"
+    },
+    {
+        "attr": "media",
+        "tags": [
+            "style"
+        ],
+        "type": "%MediaDesc;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "designed for use with these media"
+    },
+    {
+        "attr": "media",
+        "tags": [
+            "link"
+        ],
+        "type": "%MediaDesc;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "for rendering on these media"
+    },
+    {
+        "attr": "method",
+        "tags": [
+            "form"
+        ],
+        "type": "(GET | POST)",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "HTTP method used to submit the form"
+    },
+    {
+        "attr": "multiple",
+        "tags": [
+            "select"
+        ],
+        "type": "(multiple)",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "default is single selection"
+    },
+    {
+        "attr": "name",
+        "tags": [
+            "button",
+            "textarea"
+        ],
+        "type": "CDATA",
+        "depreciated": false,
+        "dtd": false,
+        "comment": ""
+    },
+    {
+        "attr": "name",
+        "tags": [
+            "applet"
+        ],
+        "type": "CDATA",
+        "depreciated": true,
+        "dtd": true,
+        "comment": "allows applets to find each other"
+    },
+    {
+        "attr": "name",
+        "tags": [
+            "select"
+        ],
+        "type": "CDATA",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "field name"
+    },
+    {
+        "attr": "name",
+        "tags": [
+            "form"
+        ],
+        "type": "CDATA",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "name of form for scripting"
+    },
+    {
+        "attr": "name",
+        "tags": [
+            "frame",
+            "iframe"
+        ],
+        "type": "CDATA",
+        "depreciated": false,
+        "dtd": true,
+        "comment": "name of frame for targetting"
+    },
+    {
+        "attr": "name",
+        "tags": [
+            "img"
+        ],
+        "type": "CDATA",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "name of image for scripting"
+    },
+    {
+        "attr": "name",
+        "tags": [
+            "a"
+        ],
+        "type": "CDATA",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "named link end"
+    },
+    {
+        "attr": "name",
+        "tags": [
+            "input",
+            "object"
+        ],
+        "type": "CDATA",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "submit as part of form"
+    },
+    {
+        "attr": "name",
+        "tags": [
+            "map"
+        ],
+        "type": "CDATA",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "for reference by usemap"
+    },
+    {
+        "attr": "name",
+        "tags": [
+            "param"
+        ],
+        "type": "CDATA",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "property name"
+    },
+    {
+        "attr": "name",
+        "tags": [
+            "meta"
+        ],
+        "type": "NAME",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "metainformation name"
+    },
+    {
+        "attr": "nohref",
+        "tags": [
+            "area"
+        ],
+        "type": "(nohref)",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "this region has no action"
+    },
+    {
+        "attr": "noresize",
+        "tags": [
+            "frame"
+        ],
+        "type": "(noresize)",
+        "depreciated": false,
+        "dtd": true,
+        "comment": "allow users to resize frames?"
+    },
+    {
+        "attr": "noshade",
+        "tags": [
+            "hr"
+        ],
+        "type": "(noshade)",
+        "depreciated": true,
+        "dtd": true,
+        "comment": ""
+    },
+    {
+        "attr": "nowrap",
+        "tags": [
+            "td",
+            "th"
+        ],
+        "type": "(nowrap)",
+        "depreciated": true,
+        "dtd": true,
+        "comment": "suppress word wrap"
+    },
+    {
+        "attr": "object",
+        "tags": [
+            "applet"
+        ],
+        "type": "CDATA",
+        "depreciated": true,
+        "dtd": true,
+        "comment": "serialized applet file"
+    },
+    {
+        "attr": "onblur",
+        "tags": [
+            "a",
+            "area",
+            "button",
+            "input",
+            "label",
+            "select",
+            "textarea"
+        ],
+        "type": "%Script;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "the element lost the focus"
+    },
+    {
+        "attr": "onchange",
+        "tags": [
+            "input",
+            "select",
+            "textarea"
+        ],
+        "type": "%Script;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "the element value was changed"
+    },
+    {
+        "attr": "onclick",
+        "tags": [
+            "all elements but applet",
+            "base",
+            "basefont",
+            "bdo",
+            "br",
+            "font",
+            "frame",
+            "frameset",
+            "head",
+            "html",
+            "iframe",
+            "isindex",
+            "meta",
+            "param",
+            "script",
+            "style",
+            "title"
+        ],
+        "type": "%Script;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "a pointer button was clicked"
+    },
+    {
+        "attr": "ondblclick",
+        "tags": [
+            "all elements but applet",
+            "base",
+            "basefont",
+            "bdo",
+            "br",
+            "font",
+            "frame",
+            "frameset",
+            "head",
+            "html",
+            "iframe",
+            "isindex",
+            "meta",
+            "param",
+            "script",
+            "style",
+            "title"
+        ],
+        "type": "%Script;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "a pointer button was double clicked"
+    },
+    {
+        "attr": "onfocus",
+        "tags": [
+            "a",
+            "area",
+            "button",
+            "input",
+            "label",
+            "select",
+            "textarea"
+        ],
+        "type": "%Script;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "the element got the focus"
+    },
+    {
+        "attr": "onkeydown",
+        "tags": [
+            "all elements but applet",
+            "base",
+            "basefont",
+            "bdo",
+            "br",
+            "font",
+            "frame",
+            "frameset",
+            "head",
+            "html",
+            "iframe",
+            "isindex",
+            "meta",
+            "param",
+            "script",
+            "style",
+            "title"
+        ],
+        "type": "%Script;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "a key was pressed down"
+    },
+    {
+        "attr": "onkeypress",
+        "tags": [
+            "all elements but applet",
+            "base",
+            "basefont",
+            "bdo",
+            "br",
+            "font",
+            "frame",
+            "frameset",
+            "head",
+            "html",
+            "iframe",
+            "isindex",
+            "meta",
+            "param",
+            "script",
+            "style",
+            "title"
+        ],
+        "type": "%Script;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "a key was pressed and released"
+    },
+    {
+        "attr": "onkeyup",
+        "tags": [
+            "all elements but applet",
+            "base",
+            "basefont",
+            "bdo",
+            "br",
+            "font",
+            "frame",
+            "frameset",
+            "head",
+            "html",
+            "iframe",
+            "isindex",
+            "meta",
+            "param",
+            "script",
+            "style",
+            "title"
+        ],
+        "type": "%Script;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "a key was released"
+    },
+    {
+        "attr": "onload",
+        "tags": [
+            "frameset"
+        ],
+        "type": "%Script;",
+        "depreciated": false,
+        "dtd": true,
+        "comment": "all the frames have been loaded"
+    },
+    {
+        "attr": "onload",
+        "tags": [
+            "body"
+        ],
+        "type": "%Script;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "the document has been loaded"
+    },
+    {
+        "attr": "onmousedown",
+        "tags": [
+            "all elements but applet",
+            "base",
+            "basefont",
+            "bdo",
+            "br",
+            "font",
+            "frame",
+            "frameset",
+            "head",
+            "html",
+            "iframe",
+            "isindex",
+            "meta",
+            "param",
+            "script",
+            "style",
+            "title"
+        ],
+        "type": "%Script;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "a pointer button was pressed down"
+    },
+    {
+        "attr": "onmousemove",
+        "tags": [
+            "all elements but applet",
+            "base",
+            "basefont",
+            "bdo",
+            "br",
+            "font",
+            "frame",
+            "frameset",
+            "head",
+            "html",
+            "iframe",
+            "isindex",
+            "meta",
+            "param",
+            "script",
+            "style",
+            "title"
+        ],
+        "type": "%Script;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "a pointer was moved within"
+    },
+    {
+        "attr": "onmouseout",
+        "tags": [
+            "all elements but applet",
+            "base",
+            "basefont",
+            "bdo",
+            "br",
+            "font",
+            "frame",
+            "frameset",
+            "head",
+            "html",
+            "iframe",
+            "isindex",
+            "meta",
+            "param",
+            "script",
+            "style",
+            "title"
+        ],
+        "type": "%Script;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "a pointer was moved away"
+    },
+    {
+        "attr": "onmouseover",
+        "tags": [
+            "all elements but applet",
+            "base",
+            "basefont",
+            "bdo",
+            "br",
+            "font",
+            "frame",
+            "frameset",
+            "head",
+            "html",
+            "iframe",
+            "isindex",
+            "meta",
+            "param",
+            "script",
+            "style",
+            "title"
+        ],
+        "type": "%Script;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "a pointer was moved onto"
+    },
+    {
+        "attr": "onmouseup",
+        "tags": [
+            "all elements but applet",
+            "base",
+            "basefont",
+            "bdo",
+            "br",
+            "font",
+            "frame",
+            "frameset",
+            "head",
+            "html",
+            "iframe",
+            "isindex",
+            "meta",
+            "param",
+            "script",
+            "style",
+            "title"
+        ],
+        "type": "%Script;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "a pointer button was released"
+    },
+    {
+        "attr": "onreset",
+        "tags": [
+            "form"
+        ],
+        "type": "%Script;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "the form was reset"
+    },
+    {
+        "attr": "onselect",
+        "tags": [
+            "input",
+            "textarea"
+        ],
+        "type": "%Script;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "some text was selected"
+    },
+    {
+        "attr": "onsubmit",
+        "tags": [
+            "form"
+        ],
+        "type": "%Script;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "the form was submitted"
+    },
+    {
+        "attr": "onunload",
+        "tags": [
+            "frameset"
+        ],
+        "type": "%Script;",
+        "depreciated": false,
+        "dtd": true,
+        "comment": "all the frames have been removed"
+    },
+    {
+        "attr": "onunload",
+        "tags": [
+            "body"
+        ],
+        "type": "%Script;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "the document has been removed"
+    },
+    {
+        "attr": "profile",
+        "tags": [
+            "head"
+        ],
+        "type": "%URI;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "named dictionary of meta info"
+    },
+    {
+        "attr": "prompt",
+        "tags": [
+            "isindex"
+        ],
+        "type": "%Text;",
+        "depreciated": true,
+        "dtd": true,
+        "comment": "prompt message"
+    },
+    {
+        "attr": "readonly",
+        "tags": [
+            "textarea"
+        ],
+        "type": "(readonly)",
+        "depreciated": false,
+        "dtd": false,
+        "comment": ""
+    },
+    {
+        "attr": "readonly",
+        "tags": [
+            "input"
+        ],
+        "type": "(readonly)",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "for text and passwd"
+    },
+    {
+        "attr": "rel",
+        "tags": [
+            "a",
+            "link"
+        ],
+        "type": "%LinkTypes;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "forward link types"
+    },
+    {
+        "attr": "rev",
+        "tags": [
+            "a",
+            "link"
+        ],
+        "type": "%LinkTypes;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "reverse link types"
+    },
+    {
+        "attr": "rows",
+        "tags": [
+            "frameset"
+        ],
+        "type": "%MultiLengths;",
+        "depreciated": false,
+        "dtd": true,
+        "comment": "list of lengths, default: 100% (1 row)"
+    },
+    {
+        "attr": "rows",
+        "tags": [
+            "textarea"
+        ],
+        "type": "NUMBER",
+        "depreciated": false,
+        "dtd": false,
+        "comment": ""
+    },
+    {
+        "attr": "rowspan",
+        "tags": [
+            "td",
+            "th"
+        ],
+        "type": "NUMBER",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "number of rows spanned by cell"
+    },
+    {
+        "attr": "rules",
+        "tags": [
+            "table"
+        ],
+        "type": "%TRules;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "rulings between rows and cols"
+    },
+    {
+        "attr": "scheme",
+        "tags": [
+            "meta"
+        ],
+        "type": "CDATA",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "select form of content"
+    },
+    {
+        "attr": "scope",
+        "tags": [
+            "td",
+            "th"
+        ],
+        "type": "%Scope;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "scope covered by header cells"
+    },
+    {
+        "attr": "scrolling",
+        "tags": [
+            "frame",
+            "iframe"
+        ],
+        "type": "(yes | no | auto)",
+        "depreciated": false,
+        "dtd": true,
+        "comment": "scrollbar or none"
+    },
+    {
+        "attr": "selected",
+        "tags": [
+            "option"
+        ],
+        "type": "(selected)",
+        "depreciated": false,
+        "dtd": false,
+        "comment": ""
+    },
+    {
+        "attr": "shape",
+        "tags": [
+            "area"
+        ],
+        "type": "%Shape;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "controls interpretation of coords"
+    },
+    {
+        "attr": "shape",
+        "tags": [
+            "a"
+        ],
+        "type": "%Shape;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "for use with client-side image maps"
+    },
+    {
+        "attr": "size",
+        "tags": [
+            "hr"
+        ],
+        "type": "%Pixels;",
+        "depreciated": true,
+        "dtd": true,
+        "comment": ""
+    },
+    {
+        "attr": "size",
+        "tags": [
+            "font"
+        ],
+        "type": "CDATA",
+        "depreciated": true,
+        "dtd": true,
+        "comment": "[+|-]nn e.g. size=\"+1\", size=\"4\""
+    },
+    {
+        "attr": "size",
+        "tags": [
+            "input"
+        ],
+        "type": "CDATA",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "specific to each type of field"
+    },
+    {
+        "attr": "size",
+        "tags": [
+            "basefont"
+        ],
+        "type": "CDATA",
+        "depreciated": true,
+        "dtd": true,
+        "comment": "base font size for FONT elements"
+    },
+    {
+        "attr": "size",
+        "tags": [
+            "select"
+        ],
+        "type": "NUMBER",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "rows visible"
+    },
+    {
+        "attr": "span",
+        "tags": [
+            "col"
+        ],
+        "type": "NUMBER",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "COL attributes affect N columns"
+    },
+    {
+        "attr": "span",
+        "tags": [
+            "colgroup"
+        ],
+        "type": "NUMBER",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "default number of columns in group"
+    },
+    {
+        "attr": "src",
+        "tags": [
+            "script"
+        ],
+        "type": "%URI;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "URI for an external script"
+    },
+    {
+        "attr": "src",
+        "tags": [
+            "input"
+        ],
+        "type": "%URI;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "for fields with images"
+    },
+    {
+        "attr": "src",
+        "tags": [
+            "frame",
+            "iframe"
+        ],
+        "type": "%URI;",
+        "depreciated": false,
+        "dtd": true,
+        "comment": "source of frame content"
+    },
+    {
+        "attr": "src",
+        "tags": [
+            "img"
+        ],
+        "type": "%URI;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "URI of image to embed"
+    },
+    {
+        "attr": "standby",
+        "tags": [
+            "object"
+        ],
+        "type": "%Text;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "message to show while loading"
+    },
+    {
+        "attr": "start",
+        "tags": [
+            "ol"
+        ],
+        "type": "NUMBER",
+        "depreciated": true,
+        "dtd": true,
+        "comment": "starting sequence number"
+    },
+    {
+        "attr": "style",
+        "tags": [
+            "all elements but base",
+            "basefont",
+            "head",
+            "html",
+            "meta",
+            "param",
+            "script",
+            "style",
+            "title"
+        ],
+        "type": "%StyleSheet;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "associated style info"
+    },
+    {
+        "attr": "summary",
+        "tags": [
+            "table"
+        ],
+        "type": "%Text;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "purpose/structure for speech output"
+    },
+    {
+        "attr": "tabindex",
+        "tags": [
+            "a",
+            "area",
+            "button",
+            "input",
+            "object",
+            "select",
+            "textarea"
+        ],
+        "type": "NUMBER",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "position in tabbing order"
+    },
+    {
+        "attr": "target",
+        "tags": [
+            "a",
+            "area",
+            "base",
+            "form",
+            "link"
+        ],
+        "type": "%FrameTarget;",
+        "depreciated": false,
+        "dtd": true,
+        "comment": "render in this frame"
+    },
+    {
+        "attr": "text",
+        "tags": [
+            "body"
+        ],
+        "type": "%Color;",
+        "depreciated": true,
+        "dtd": true,
+        "comment": "document text color"
+    },
+    {
+        "attr": "title",
+        "tags": [
+            "all elements but base",
+            "basefont",
+            "head",
+            "html",
+            "meta",
+            "param",
+            "script",
+            "title"
+        ],
+        "type": "%Text;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "advisory title"
+    },
+    {
+        "attr": "type",
+        "tags": [
+            "a",
+            "link"
+        ],
+        "type": "%ContentType;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "advisory content type"
+    },
+    {
+        "attr": "type",
+        "tags": [
+            "object"
+        ],
+        "type": "%ContentType;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "content type for data"
+    },
+    {
+        "attr": "type",
+        "tags": [
+            "param"
+        ],
+        "type": "%ContentType;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "content type for value when valuetype=ref"
+    },
+    {
+        "attr": "type",
+        "tags": [
+            "script"
+        ],
+        "type": "%ContentType;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "content type of script language"
+    },
+    {
+        "attr": "type",
+        "tags": [
+            "style"
+        ],
+        "type": "%ContentType;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "content type of style language"
+    },
+    {
+        "attr": "type",
+        "tags": [
+            "input"
+        ],
+        "type": "%InputType;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "what kind of widget is needed"
+    },
+    {
+        "attr": "type",
+        "tags": [
+            "li"
+        ],
+        "type": "%LIStyle;",
+        "depreciated": true,
+        "dtd": true,
+        "comment": "list item style"
+    },
+    {
+        "attr": "type",
+        "tags": [
+            "ol"
+        ],
+        "type": "%OLStyle;",
+        "depreciated": true,
+        "dtd": true,
+        "comment": "numbering style"
+    },
+    {
+        "attr": "type",
+        "tags": [
+            "ul"
+        ],
+        "type": "%ULStyle;",
+        "depreciated": true,
+        "dtd": true,
+        "comment": "bullet style"
+    },
+    {
+        "attr": "type",
+        "tags": [
+            "button"
+        ],
+        "type": "(button | submit | reset)",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "for use as form button"
+    },
+    {
+        "attr": "usemap",
+        "tags": [
+            "img",
+            "input",
+            "object"
+        ],
+        "type": "%URI;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "use client-side image map"
+    },
+    {
+        "attr": "valign",
+        "tags": [
+            "col",
+            "colgroup",
+            "tbody",
+            "td",
+            "tfoot",
+            "th",
+            "thead",
+            "tr"
+        ],
+        "type": "(top | middle | bottom | baseline)",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "vertical alignment in cells"
+    },
+    {
+        "attr": "value",
+        "tags": [
+            "input"
+        ],
+        "type": "CDATA",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "Specify for radio buttons and checkboxes"
+    },
+    {
+        "attr": "value",
+        "tags": [
+            "option"
+        ],
+        "type": "CDATA",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "defaults to element content"
+    },
+    {
+        "attr": "value",
+        "tags": [
+            "param"
+        ],
+        "type": "CDATA",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "property value"
+    },
+    {
+        "attr": "value",
+        "tags": [
+            "button"
+        ],
+        "type": "CDATA",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "sent to server when submitted"
+    },
+    {
+        "attr": "value",
+        "tags": [
+            "li"
+        ],
+        "type": "NUMBER",
+        "depreciated": true,
+        "dtd": true,
+        "comment": "reset sequence number"
+    },
+    {
+        "attr": "valuetype",
+        "tags": [
+            "param"
+        ],
+        "type": "(DATA | REF | OBJECT)",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "How to interpret value"
+    },
+    {
+        "attr": "version",
+        "tags": [
+            "html"
+        ],
+        "type": "CDATA",
+        "depreciated": true,
+        "dtd": true,
+        "comment": "Constant"
+    },
+    {
+        "attr": "vlink",
+        "tags": [
+            "body"
+        ],
+        "type": "%Color;",
+        "depreciated": true,
+        "dtd": true,
+        "comment": "color of visited links"
+    },
+    {
+        "attr": "vspace",
+        "tags": [
+            "applet",
+            "img",
+            "object"
+        ],
+        "type": "%Pixels;",
+        "depreciated": true,
+        "dtd": true,
+        "comment": "vertical gutter"
+    },
+    {
+        "attr": "width",
+        "tags": [
+            "hr"
+        ],
+        "type": "%Length;",
+        "depreciated": true,
+        "dtd": true,
+        "comment": ""
+    },
+    {
+        "attr": "width",
+        "tags": [
+            "iframe"
+        ],
+        "type": "%Length;",
+        "depreciated": false,
+        "dtd": true,
+        "comment": "frame width"
+    },
+    {
+        "attr": "width",
+        "tags": [
+            "img",
+            "object"
+        ],
+        "type": "%Length;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "override width"
+    },
+    {
+        "attr": "width",
+        "tags": [
+            "table"
+        ],
+        "type": "%Length;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "table width"
+    },
+    {
+        "attr": "width",
+        "tags": [
+            "td",
+            "th"
+        ],
+        "type": "%Length;",
+        "depreciated": true,
+        "dtd": true,
+        "comment": "width for cell"
+    },
+    {
+        "attr": "width",
+        "tags": [
+            "applet"
+        ],
+        "type": "%Length;",
+        "depreciated": true,
+        "dtd": true,
+        "comment": "initial width"
+    },
+    {
+        "attr": "width",
+        "tags": [
+            "col"
+        ],
+        "type": "%MultiLength;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "column width specification"
+    },
+    {
+        "attr": "width",
+        "tags": [
+            "colgroup"
+        ],
+        "type": "%MultiLength;",
+        "depreciated": false,
+        "dtd": false,
+        "comment": "default width for enclosed COLs"
+    },
+    {
+        "attr": "width",
+        "tags": [
+            "pre"
+        ],
+        "type": "NUMBER",
+        "depreciated": true,
+        "dtd": true,
+        "comment": ""
+    }
+]

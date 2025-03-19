@@ -4,10 +4,91 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-dominator = "0.5.38"
+dominator = { path = "../dominator" }
 futures-signals = "0.3.34"
 strum = { version = "0.27.1", features = ["derive"] }
-syn = "2.0.100"
-web-sys = "0.3.77"
+syn = { version = "2.0.100", features = ["full"] }
 macros = { path = "../macros" }
 proc-macro2 = "1.0.94"
+itertools = "0.14.0"
+
+[dependencies.web-sys]
+version = "0.3.77"
+features = [
+    "HtmlAllCollection",
+    "HtmlAnchorElement",
+    "HtmlAreaElement",
+    "HtmlAudioElement",
+    "HtmlBaseElement",
+    "HtmlBodyElement",
+    "HtmlBrElement",
+    "HtmlButtonElement",
+    "HtmlCanvasElement",
+    "HtmlCollection",
+    "HtmlDListElement",
+    "HtmlDataElement",
+    "HtmlDataListElement",
+    "HtmlDetailsElement",
+    "HtmlDialogElement",
+    "HtmlDirectoryElement",
+    "HtmlDivElement",
+    "HtmlDocument",
+    "HtmlElement",
+    "HtmlEmbedElement",
+    "HtmlFieldSetElement",
+    "HtmlFontElement",
+    "HtmlFormControlsCollection",
+    "HtmlFormElement",
+    "HtmlFrameElement",
+    "HtmlFrameSetElement",
+    "HtmlHeadElement",
+    "HtmlHeadingElement",
+    "HtmlHrElement",
+    "HtmlHtmlElement",
+    "HtmlIFrameElement",
+    "HtmlImageElement",
+    "HtmlInputElement",
+    "HtmlLabelElement",
+    "HtmlLegendElement",
+    "HtmlLiElement",
+    "HtmlLinkElement",
+    "HtmlMapElement",
+    "HtmlMediaElement",
+    "HtmlMenuElement",
+    "HtmlMenuItemElement",
+    "HtmlMetaElement",
+    "HtmlMeterElement",
+    "HtmlModElement",
+    "HtmlOListElement",
+    "HtmlObjectElement",
+    "HtmlOptGroupElement",
+    "HtmlOptionElement",
+    "HtmlOptionsCollection",
+    "HtmlOutputElement",
+    "HtmlParagraphElement",
+    "HtmlParamElement",
+    "HtmlPictureElement",
+    "HtmlPreElement",
+    "HtmlProgressElement",
+    "HtmlQuoteElement",
+    "HtmlScriptElement",
+    "HtmlSelectElement",
+    "HtmlSlotElement",
+    "HtmlSourceElement",
+    "HtmlSpanElement",
+    "HtmlStyleElement",
+    "HtmlTableCaptionElement",
+    "HtmlTableCellElement",
+    "HtmlTableColElement",
+    "HtmlTableElement",
+    "HtmlTableRowElement",
+    "HtmlTableSectionElement",
+    "HtmlTemplateElement",
+    "HtmlTextAreaElement",
+    "HtmlTimeElement",
+    "HtmlTitleElement",
+    "HtmlTrackElement",
+    "HtmlUListElement",
+    "HtmlUnknownElement",
+    "HtmlVideoElement",
+]

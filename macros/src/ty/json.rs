@@ -39,12 +39,12 @@ impl Parse for JsonEnumProps {
     }
 }
 
-pub struct JsonMatchProps {
+pub struct JsonLines {
     pub path: String,
     pub js: String,
 }
 
-impl Parse for JsonMatchProps {
+impl Parse for JsonLines {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
         let path = input
             .parse::<Literal>()
@@ -55,14 +55,13 @@ impl Parse for JsonMatchProps {
             let _ = input.parse::<Token![,]>();
         });
 
-        let mut rest = String::new();
-        input
-            .step(|v| {
-                rest = v.token_stream().to_string();
-                Ok(((), Cursor::empty()))
-            })
-            .expect("Failed to get remaining tokens");
+        let mut rest = input.to_string();
+        input.step(|_| Ok(((), Cursor::empty()))).unwrap();
 
-        Ok(JsonMatchProps { path, js: rest })
+        if let Some(left) = rest.strip_prefix("r#\"") {
+            rest = left.strip_suffix("\"#").unwrap().to_string();
+        }
+
+        Ok(JsonLines { path, js: rest })
     }
 }

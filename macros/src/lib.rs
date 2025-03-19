@@ -2,8 +2,8 @@ use std::process::Command;
 
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{Arm, Expr, Variant, parse_macro_input, parse_str};
-use ty::json::{JsonEnumProps, JsonMatchProps};
+use syn::{parse_macro_input, parse_str, Expr, Variant};
+use ty::json::{JsonEnumProps, JsonLines};
 
 mod ty;
 
@@ -40,7 +40,7 @@ pub fn json_enum(ts: TokenStream) -> TokenStream {
 
     let name = props.ident;
     quote! {
-        #[derive(Debug, Copy, Clone, strum::EnumString)]
+        #[derive(Debug, Copy, Clone, strum::EnumString, strum::VariantNames)]
         pub enum #name {
             #(#variants),*
         }
@@ -49,20 +49,20 @@ pub fn json_enum(ts: TokenStream) -> TokenStream {
 }
 
 #[proc_macro]
-pub fn json_match(ts: TokenStream) -> TokenStream {
-    let props = parse_macro_input!(ts as JsonMatchProps);
+pub fn json(ts: TokenStream) -> TokenStream {
+    let props = parse_macro_input!(ts as JsonLines);
 
     let items = js_lines_from_file(props.js, props.path)
         .into_iter()
         .map(|v| {
-            parse_str::<Arm>(&v).expect(&format!("Failed to parse variant from JS\nArm: {v}\n"))
+            parse_str::<Expr>(&v).expect(&format!("Failed to parse variant from JS\nArm: {v}\n"))
         })
         .collect::<Vec<_>>();
 
     quote! {
-        match Self {
+        [
             #(#items),*
-        }
+        ]
     }
     .into()
 }
