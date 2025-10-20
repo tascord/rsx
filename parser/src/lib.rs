@@ -6,6 +6,7 @@ pub mod tokens;
 pub fn type_ident(a: Node) -> Option<String> {
     match a {
         Node::Text(_) => None,
+        Node::Expression(_) => None,
         Node::Element(element) => Some(
             match element.ident.to_string().as_str() {
                 "a" => "HTMLAnchorElement",

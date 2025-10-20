@@ -1,0 +1,9 @@
+[package]
+name = "rsx-test"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rsx-macro = { path = "../rsx-macro" }
+dominator = { path = "../dominator" }
+futures-signals = "0.3.34"

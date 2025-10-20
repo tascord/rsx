@@ -14,14 +14,14 @@ pub fn apply<
     el: DomBuilder<A>,
     key: B,
     value: C,
-) {
+) -> DomBuilder<A> {
     match should_set_as_prop(&el, key.clone(), value.clone()) {
         true => el.prop(key.into(), value),
         false => el.attr(
             key.into(),
             &Into::<JsValue>::into(value).as_string().unwrap_or_default(),
         ),
-    };
+    }
 }
 
 pub fn bind<
@@ -33,21 +33,21 @@ pub fn bind<
     el: DomBuilder<A>,
     key: B,
     value: D,
-) {
+) -> DomBuilder<A> {
     match should_set_as_prop(&el, key.clone(), JsValue::undefined()) {
         true => el.prop_signal(key.into(), value),
         false => el.attr_signal(
             key.into(),
             value.map(|v| Into::<JsValue>::into(v).as_string().unwrap_or_default()),
         ),
-    };
+    }
 }
 
 mod attrs {
     use macros::json;
 
     /// Attr: &[Tags]
-    pub const MAP: &'static [(&'static str, &'static [&'static str])] = json!(
+    pub const MAP: &'static [(&'static str, &'static [&'static str])] = &json!(
         "./parser/mdn/attributes.json",
         r#"attrs => attrs.map(v => `("${v.attr}", &[${v.tags.map(v => `"${v}"`).join(", ")}])`)"#
     );

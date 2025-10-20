@@ -34,10 +34,21 @@ pub struct Element {
     pub children: Vec<Box<Node>>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub enum Node {
     Element(Element),
     Text(String),
+    Expression(Expr),
+}
+
+impl std::fmt::Debug for Node {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Node::Element(e) => f.debug_tuple("Element").field(e).finish(),
+            Node::Text(t) => f.debug_tuple("Text").field(t).finish(),
+            Node::Expression(_) => f.debug_tuple("Expression").field(&"<expr>").finish(),
+        }
+    }
 }
 
 macro_rules! er {
@@ -118,6 +129,14 @@ impl Parse for Node {
             return Err(er!(input, "Nothing to parse... {}", ":("));
         }
 
+        // Check for curly brace expressions first
+        if input.peek(syn::token::Brace) {
+            let content;
+            syn::braced!(content in input);
+            let expr: Expr = content.parse()?;
+            return Ok(Node::Expression(expr));
+        }
+
         Ok(match try_rw!(input, Element) {
             Some(v) => Node::Element(v),
             None => {
@@ -127,7 +146,7 @@ impl Parse for Node {
 
                     loop {
                         if let Some((p, _)) = cursor.punct() {
-                            if p.as_char() == '<' {
+                            if p.as_char() == '<' || p.as_char() == '{' {
                                 break;
                             }
                         }
@@ -193,5 +212,65 @@ impl Parse for Prop {
             .ok_or(er!(input, "Missing prop value: {:?}", ":("))?;
 
         Ok(Prop { name, value })
+    }
+}
+
+impl Into<proc_macro2::TokenStream> for Element {
+    fn into(self) -> proc_macro2::TokenStream {
+        use quote::quote;
+        
+        let tag_name = &self.ident;
+        let tag_str = tag_name.to_string();
+        
+        // Generate attributes
+        let mut methods = Vec::new();
+        
+        for prop in &self.props {
+            let attr_name = prop.name.to_string();
+            let value = &prop.value;
+            let attr_method = quote! {
+                .attr(#attr_name, #value)
+            };
+            methods.push(attr_method);
+        }
+        
+        // Generate children if any
+        if !self.children.is_empty() {
+            let mut children = Vec::new();
+            for child in &self.children {
+                let child_code: proc_macro2::TokenStream = match child.as_ref() {
+                    Node::Element(element) => element.clone().into(),
+                    Node::Text(text) => {
+                        quote! {
+                            html!("span", {
+                                .text(#text)
+                            })
+                        }
+                    }
+                    Node::Expression(expr) => {
+                        quote! {
+                            html!("span", {
+                                .text_signal((#expr).map(|x| x.to_string()))
+                            })
+                        }
+                    }
+                };
+                children.push(child_code);
+            }
+            
+            let children_method = quote! {
+                .children(&mut [
+                    #(#children),*
+                ])
+            };
+            methods.push(children_method);
+        }
+        
+        // Generate dominator code structure
+        quote! {
+            html!(#tag_str, {
+                #(#methods)*
+            })
+        }
     }
 }

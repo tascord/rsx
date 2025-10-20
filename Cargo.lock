@@ -212,6 +212,7 @@ dependencies = [
  "itertools",
  "macros",
  "proc-macro2",
+ "quote",
  "strum",
  "syn",
  "web-sys",
@@ -275,6 +276,15 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "rsx-test"
+version = "0.1.0"
+dependencies = [
+ "dominator",
+ "futures-signals",
+ "rsx-macro",
 ]
 
 [[package]]
