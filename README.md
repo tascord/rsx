@@ -1,6 +1,4 @@
-<!-- <img width="200" height="200" align="left" style="float: left; margin: 0 10px 0 0;" alt="Icon" src="https://github.com/tascord/rsx/blob/main/icon.svg?raw=true">  -->
-
-<img width="200" height="200" align="left" style="float: left; margin: 0 10px 0 0;" alt="Icon" src="./icon.svg"> 
+<img width="200" height="200" align="left" style="float: left; margin: 0 10px 0 0;" alt="Icon" src="https://github.com/tascord/rsx/blob/main/icon.svg?raw=true"> 
 
 # RustSX
 ## JSX-like syntax for Rust+WASM via [Dominator](https://github.com/Pauan/rust-dominator)
