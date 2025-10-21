@@ -179,18 +179,16 @@ done
 
 echo "--- Performing Dry Run of Cargo Publish ---"
 
-# Construct the list of package flags for cargo publish
-CARGO_PKGS=""
+# Perform dry run for each package individually in dependency order
 for pkg_dir in "${TARGET_PKGS[@]}"; do
-    # Get the actual crate name from Cargo.toml
     PKG_NAME=$(toml get package.name --toml-path "$pkg_dir/Cargo.toml")
-    CARGO_PKGS+="-p $PKG_NAME "
+    echo "Dry-run publishing $PKG_NAME..."
+    
+    if ! cargo +nightly publish -p "$PKG_NAME" --dry-run --allow-dirty; then
+        echo "Cargo dry-run failed for $PKG_NAME. Reverting changes and exiting."
+        cleanup_and_exit
+    fi
 done
-
-if ! cargo +nightly publish $CARGO_PKGS --dry-run --allow-dirty; then
-    echo "Cargo dry-run failed. Reverting changes and exiting."
-    cleanup_and_exit
-fi
 
 # --- Commit and Push ---
 
@@ -215,7 +213,19 @@ fi
 
 echo "--- Publishing Crates ---"
 
-# Use the same list of package flags constructed earlier
-cargo +nightly publish $CARGO_PKGS
+# Publish each package individually in dependency order
+for pkg_dir in "${TARGET_PKGS[@]}"; do
+    PKG_NAME=$(toml get package.name --toml-path "$pkg_dir/Cargo.toml")
+    echo "Publishing $PKG_NAME..."
+    
+    if ! cargo +nightly publish -p "$PKG_NAME"; then
+        echo "Publishing failed for $PKG_NAME. Please check and resolve manually."
+        exit 1
+    fi
+    
+    # Wait a moment between publishes to allow crates.io to propagate
+    echo "Waiting for crates.io to propagate..."
+    sleep 10
+done
 
 echo "✅ Publishing process complete. Version $NEXT_VERSION is now live for all packages!"
