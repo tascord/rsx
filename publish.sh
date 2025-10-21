@@ -10,11 +10,12 @@ set -e
 
 # Define the array of target Rust package directories.
 # NOTE: These names must match the directory names.
+# IMPORTANT: Order matters for publishing - dependencies must come first!
 TARGET_PKGS=(
-    "rustsx"
-    "rsx-parser"
-    "rsx-dominator"
-    "rsx-macros"
+    "rsx-dominator"  # No internal dependencies - publish first
+    "rsx-parser"     # Depends on rsx-dominator
+    "rsx-macros"     # Depends on rsx-parser  
+    "rustsx"         # Depends on all others - publish last
 )
 
 # --- Utility Functions ---
