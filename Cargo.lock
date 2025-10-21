@@ -244,7 +244,7 @@ checksum = "69cdb34c158ceb288df11e18b4bd39de994f6657d83847bdffdbd7f346754b0f"
 
 [[package]]
 name = "rsx-dominator"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "discard",
  "futures-channel",
@@ -261,7 +261,7 @@ dependencies = [
 
 [[package]]
 name = "rsx-macros"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "heck",
  "proc-macro2",
@@ -272,7 +272,7 @@ dependencies = [
 
 [[package]]
 name = "rsx-parser"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "futures-signals",
  "itertools",
@@ -286,7 +286,7 @@ dependencies = [
 
 [[package]]
 name = "rustsx"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "futures-signals",
  "rsx-dominator",
