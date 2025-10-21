@@ -50,7 +50,7 @@ checksum = "48c757948c5ede0e46177b7add2e67155f70e33c07fea8284df6576da70b3719"
 
 [[package]]
 name = "example"
-version = "0.1.0"
+version = "0.0.0"
 dependencies = [
  "console_error_panic_hook",
  "futures-signals",
@@ -182,7 +182,7 @@ dependencies = [
 
 [[package]]
 name = "lib-macros"
-version = "0.1.0"
+version = "0.0.0"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -210,7 +210,7 @@ checksum = "d75b0bedcc4fe52caa0e03d9f1151a323e4aa5e2d78ba3580400cd3c9e2bc4bc"
 
 [[package]]
 name = "parser"
-version = "0.1.0"
+version = "0.0.0"
 dependencies = [
  "futures-signals",
  "itertools",
@@ -275,7 +275,7 @@ dependencies = [
 
 [[package]]
 name = "rsx"
-version = "0.1.0"
+version = "0.0.0"
 dependencies = [
  "futures-signals",
  "parser",
@@ -287,7 +287,7 @@ dependencies = [
 
 [[package]]
 name = "rsx-dominator"
-version = "0.1.0"
+version = "0.0.0"
 dependencies = [
  "discard",
  "futures-channel",
@@ -304,7 +304,7 @@ dependencies = [
 
 [[package]]
 name = "rsx-macro"
-version = "0.1.0"
+version = "0.0.0"
 dependencies = [
  "heck",
  "parser",

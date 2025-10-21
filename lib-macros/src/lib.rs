@@ -30,7 +30,7 @@ pub fn json_enum(ts: TokenStream) -> TokenStream {
 
     let variants = js_lines_from_file(props.js, props.path)
         .into_iter()
-        .map(|v| parse_str::<Variant>(&v).expect(&format!("Failed to parse variant from JS\nVariant: {v}\n")))
+        .map(|v| parse_str::<Variant>(&v).unwrap_or_else(|_| panic!("Failed to parse variant from JS\nVariant: {v}\n")))
         .collect::<Vec<_>>();
 
     let name = props.ident;
@@ -49,7 +49,7 @@ pub fn json(ts: TokenStream) -> TokenStream {
 
     let items = js_lines_from_file(props.js, props.path)
         .into_iter()
-        .map(|v| parse_str::<Expr>(&v).expect(&format!("Failed to parse variant from JS\nArm: {v}\n")))
+        .map(|v| parse_str::<Expr>(&v).unwrap_or_else(|_| panic!("Failed to parse variant from JS\nArm: {v}\n")))
         .collect::<Vec<_>>();
 
     quote! {

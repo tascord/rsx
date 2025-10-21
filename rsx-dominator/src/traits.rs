@@ -45,7 +45,7 @@ pub trait AsStr {
     }
 }
 
-impl<'a, A> AsStr for &'a A
+impl<A> AsStr for &A
 where
     A: AsStr,
 {
@@ -73,7 +73,7 @@ impl AsStr for String {
     where
         F: FnOnce(&str) -> A,
     {
-        f(&self)
+        f(self)
     }
 }
 
@@ -90,7 +90,7 @@ impl AsStr for str {
     }
 }
 
-impl<'a> AsStr for &'a str {
+impl AsStr for &str {
     #[inline]
     fn as_str(&self) -> &str { self }
 
@@ -105,14 +105,14 @@ impl<'a> AsStr for &'a str {
 
 impl<'a> AsStr for Cow<'a, str> {
     #[inline]
-    fn as_str(&self) -> &str { &*self }
+    fn as_str(&self) -> &str { self }
 
     #[inline]
     fn with_str<A, F>(&self, f: F) -> A
     where
         F: FnOnce(&str) -> A,
     {
-        f(&*self)
+        f(self)
     }
 }
 

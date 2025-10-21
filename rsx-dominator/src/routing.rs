@@ -15,7 +15,7 @@ use {
 fn change_url(mutable: &Mutable<String>) {
     let mut lock = mutable.lock_mut();
 
-    let new_url = String::from(bindings::current_url());
+    let new_url = bindings::current_url();
 
     // TODO helper method for this
     // TODO can this be made more efficient ?
@@ -45,7 +45,7 @@ pub fn url() -> ReadOnlyMutable<String> {
         // TODO this needs to call decrement to clean up the listener
         let url = url.increment(|| {
             // TODO can this be made more efficient ?
-            let url = Mutable::new(String::from(bindings::current_url()));
+            let url = Mutable::new(bindings::current_url());
 
             let listener = {
                 let url = url.clone();

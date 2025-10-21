@@ -261,7 +261,7 @@ fn generate_child_code(child: &parser::tokens::Node) -> Vec<proc_macro2::TokenSt
                     if depth == 1 {
                         // Starting a new expression - push any accumulated text
                         if !buf.is_empty() {
-                            doms.push(quote! { Dom::text(#buf) }.into());
+                            doms.push(quote! { Dom::text(#buf) });
                             buf.clear();
                         }
                     } else {
@@ -297,7 +297,7 @@ fn generate_child_code(child: &parser::tokens::Node) -> Vec<proc_macro2::TokenSt
             }
 
             if !buf.is_empty() {
-                doms.push(quote! { Dom::text(#buf) }.into());
+                doms.push(quote! { Dom::text(#buf) });
                 buf.clear();
             }
 
@@ -453,26 +453,25 @@ pub fn component(_attr: TokenStream, item: TokenStream) -> TokenStream {
 
 // Helper function to check if a type is Mutable<T>
 fn is_mutable_type(ty: &syn::Type) -> bool {
-    if let syn::Type::Path(type_path) = ty {
-        if let Some(segment) = type_path.path.segments.last() {
-            return segment.ident == "Mutable";
-        }
+    if let syn::Type::Path(type_path) = ty
+        && let Some(segment) = type_path.path.segments.last()
+    {
+        return segment.ident == "Mutable";
     }
     false
 }
 
 // Helper function to extract T from Mutable<T> or return the type as-is
 fn extract_inner_type(ty: &syn::Type) -> syn::Type {
-    if let syn::Type::Path(type_path) = ty {
-        if let Some(segment) = type_path.path.segments.last() {
-            // Check if this is Mutable<T>
-            if segment.ident == "Mutable" {
-                if let syn::PathArguments::AngleBracketed(args) = &segment.arguments {
-                    if let Some(syn::GenericArgument::Type(inner_ty)) = args.args.first() {
-                        return inner_ty.clone();
-                    }
-                }
-            }
+    if let syn::Type::Path(type_path) = ty
+        && let Some(segment) = type_path.path.segments.last()
+    {
+        // Check if this is Mutable<T>
+        if segment.ident == "Mutable"
+            && let syn::PathArguments::AngleBracketed(args) = &segment.arguments
+            && let Some(syn::GenericArgument::Type(inner_ty)) = args.args.first()
+        {
+            return inner_ty.clone();
         }
     }
     ty.clone()

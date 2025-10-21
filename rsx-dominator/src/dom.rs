@@ -1,6 +1,6 @@
 use {
     crate::{
-        bindings::{self, WINDOW, create_empty_node, create_text_node},
+        bindings::{self, WINDOW, create_text_node},
         callbacks::Callbacks,
         fragment::{Fragment, FragmentBuilder},
         operations::{self, for_each, spawn_future},
@@ -18,7 +18,6 @@ use {
     std::{
         borrow::BorrowMut,
         convert::AsRef,
-        ffi::os_str::Display,
         future::Future,
         pin::Pin,
         task::{Context, Poll},
@@ -145,7 +144,7 @@ impl Discard for DomHandle {
 #[inline]
 #[track_caller]
 pub fn append_dom(parent: &Node, dom: Dom) -> DomHandle {
-    bindings::append_child(&parent, &dom.element);
+    bindings::append_child(parent, &dom.element);
     DomHandle::new(parent, dom)
 }
 
@@ -153,7 +152,7 @@ pub fn append_dom(parent: &Node, dom: Dom) -> DomHandle {
 #[inline]
 #[track_caller]
 pub fn replace_dom(parent: &Node, old_node: &Node, dom: Dom) -> DomHandle {
-    bindings::replace_child(&parent, &dom.element, old_node);
+    bindings::replace_child(parent, &dom.element, old_node);
     DomHandle::new(parent, dom)
 }
 
@@ -485,7 +484,7 @@ where
 
     let element = make_text_signal(&mut callbacks, value);
 
-    Dom { element: element.into(), callbacks: callbacks }
+    Dom { element: element.into(), callbacks }
 }
 
 // TODO better warning message for must_use
@@ -615,14 +614,14 @@ where
         value: &str,
         important: bool,
     ) -> Option<()> {
-        assert!(value != "");
+        assert!(!value.is_empty());
 
         // TODO handle browser prefixes ?
         bindings::remove_style(style, name);
 
         bindings::set_style(style, name, value, important);
 
-        let is_changed = bindings::get_style(style, name) != "";
+        let is_changed = !bindings::get_style(style, name).is_empty();
 
         if is_changed {
             Some(())
@@ -638,16 +637,15 @@ where
 
         value.find_map(|value| {
             // TODO should this intern ?
-            try_set_style(style, &mut names, &mut values, &name, &value, important)
+            try_set_style(style, &mut names, &mut values, name, value, important)
         })
     });
 
-    if let None = okay {
-        if cfg!(debug_assertions) {
+    if okay.is_none()
+        && cfg!(debug_assertions) {
             // TODO maybe make this configurable
             panic!("style is incorrect:\n  names: {}\n  values: {}", names.join(", "), values.join(", "));
         }
-    }
 }
 
 // TODO should this inline ?
@@ -726,6 +724,7 @@ where
 }
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
+#[derive(Default)]
 pub struct EventOptions {
     pub bubbles: bool,
     pub preventable: bool,
@@ -748,9 +747,6 @@ impl EventOptions {
     }
 }
 
-impl Default for EventOptions {
-    fn default() -> Self { Self { bubbles: false, preventable: false } }
-}
 
 /// Scroll behavior for [`ScrollIntoView`].
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
@@ -834,6 +830,7 @@ impl ScrollIntoView {
         Self { behavior: ScrollBehavior::Smooth, align_x: ScrollAlign::Nearest, align_y: ScrollAlign::Nearest }
     }
 
+    #[allow(clippy::wrong_self_convention)]
     fn into_js(&self) -> web_sys::ScrollIntoViewOptions {
         let output = web_sys::ScrollIntoViewOptions::new();
         output.set_inline(self.align_x.into_js());
@@ -1107,7 +1104,7 @@ where
         T: StaticEvent,
         F: FnMut(T) + 'static,
     {
-        Self::_event(&mut self.callbacks, &self.element.as_ref(), options, listener);
+        Self::_event(&mut self.callbacks, self.element.as_ref(), options, listener);
         self
     }
 
@@ -1232,7 +1229,7 @@ where
         let element = self.element.as_ref();
 
         name.each(|name| {
-            bindings::set_attribute(element, intern(name), &value);
+            bindings::set_attribute(element, intern(name), value);
         });
 
         self
@@ -1258,7 +1255,7 @@ where
         let namespace: &str = intern(namespace);
 
         name.each(|name| {
-            bindings::set_attribute_ns(element, &namespace, intern(name), &value);
+            bindings::set_attribute_ns(element, namespace, intern(name), value);
         });
 
         self
@@ -1319,7 +1316,7 @@ where
             Some(value) => {
                 value.with_str(|value| {
                     name.each(|name| {
-                        bindings::set_attribute(element, intern(name), &value);
+                        bindings::set_attribute(element, intern(name), value);
                     });
                 });
             }
@@ -1375,7 +1372,7 @@ where
                     value.with_str(|value| {
                         name.each(|name| {
                             // TODO should this intern the value ?
-                            bindings::set_attribute_ns(element, &namespace, intern(name), &value);
+                            bindings::set_attribute_ns(element, &namespace, intern(name), value);
                         });
                     });
                 }
@@ -1434,14 +1431,12 @@ where
                         bindings::add_class(&element, intern(name));
                     });
                 }
-            } else {
-                if is_set {
-                    is_set = false;
+            } else if is_set {
+                is_set = false;
 
-                    name.each(|name| {
-                        bindings::remove_class(&element, intern(name));
-                    });
-                }
+                name.each(|name| {
+                    bindings::remove_class(&element, intern(name));
+                });
             }
         }));
     }
@@ -1917,7 +1912,7 @@ impl ClassBuilder {
 
         Self {
             // TODO make this more efficient ?
-            stylesheet: StylesheetBuilder::__internal_stylesheet(&format!(".{} {{}}", class_name)),
+            stylesheet: StylesheetBuilder::__internal_stylesheet(format!(".{} {{}}", class_name)),
             class_name,
         }
     }

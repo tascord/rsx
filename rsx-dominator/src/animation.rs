@@ -133,7 +133,7 @@ pub fn timestamps() -> Timestamps {
 
             lock.states.push(Arc::downgrade(&timestamps.state));
 
-            if let None = lock.raf {
+            if lock.raf.is_none() {
                 let timestamps_manager = timestamps_manager.clone();
 
                 lock.raf = Some(Raf::new(move |time| {
@@ -157,7 +157,7 @@ pub fn timestamps() -> Timestamps {
                         }
                     });
 
-                    if lock.states.len() == 0 {
+                    if lock.states.is_empty() {
                         lock.raf = None;
                         // TODO is this a good idea ?
                         lock.states = vec![];
@@ -187,7 +187,7 @@ impl<S: SignalVec> AnimatedSignalVec for S {
     where
         F: FnMut(Self::Item, Self::Animation) -> A,
     {
-        AnimatedMap { duration: duration, animations: vec![], signal: Some(self), callback: f }
+        AnimatedMap { duration, animations: vec![], signal: Some(self), callback: f }
     }
 }
 
@@ -240,7 +240,7 @@ where
         }
     }
 
-    fn should_remove(animations: &mut Vec<AnimatedMapState>, cx: &mut Context, index: usize) -> bool {
+    fn should_remove(animations: &mut [AnimatedMapState], cx: &mut Context, index: usize) -> bool {
         let state = &mut animations[index];
 
         state.animation.animate_to(Percentage::new_unchecked(0.0));
@@ -255,7 +255,7 @@ where
         }
     }
 
-    fn find_index(animations: &Vec<AnimatedMapState>, parent_index: usize) -> Option<usize> {
+    fn find_index(animations: &[AnimatedMapState], parent_index: usize) -> Option<usize> {
         let mut seen = 0;
 
         // TODO is there a combinator that can simplify this ?
@@ -274,7 +274,7 @@ where
     }
 
     #[inline]
-    fn find_last_index(animations: &Vec<AnimatedMapState>) -> Option<usize> {
+    fn find_last_index(animations: &[AnimatedMapState]) -> Option<usize> {
         animations.iter().rposition(|state| state.removing.is_none())
     }
 }
@@ -290,7 +290,7 @@ where
     fn poll_vec_change(self: Pin<&mut Self>, cx: &mut Context) -> Poll<Option<VecDiff<Self::Item>>> {
         let mut is_done = true;
 
-        let AnimatedMapProj { mut animations, mut signal, callback, duration, .. } = self.project();
+        let AnimatedMapProj { animations, mut signal, callback, duration, .. } = self.project();
 
         // TODO is this loop correct ?
         while let Some(result) = signal.as_mut().as_pin_mut().map(|signal| signal.poll_vec_change(cx)) {
@@ -324,7 +324,7 @@ where
                         }
 
                         VecDiff::InsertAt { index, value } => {
-                            let index = Self::find_index(&animations, index).unwrap_or_else(|| animations.len());
+                            let index = Self::find_index(animations, index).unwrap_or(animations.len());
                             let state = Self::animated_state(*duration);
                             let value = callback(value, AnimatedMapBroadcaster(state.animation.raw_clone()));
                             animations.insert(index, state);
@@ -339,7 +339,7 @@ where
                         }
 
                         VecDiff::UpdateAt { index, value } => {
-                            let index = Self::find_index(&animations, index).unwrap_throw();
+                            let index = Self::find_index(animations, index).unwrap_throw();
                             let state = {
                                 let state = &animations[index];
                                 AnimatedMapBroadcaster(state.animation.raw_clone())
@@ -351,11 +351,11 @@ where
                         // TODO test this
                         // TODO should this be treated as a removal + insertion ?
                         VecDiff::Move { old_index, new_index } => {
-                            let old_index = Self::find_index(&animations, old_index).unwrap_throw();
+                            let old_index = Self::find_index(animations, old_index).unwrap_throw();
 
                             let state = animations.remove(old_index);
 
-                            let new_index = Self::find_index(&animations, new_index).unwrap_or_else(|| animations.len());
+                            let new_index = Self::find_index(animations, new_index).unwrap_or(animations.len());
 
                             animations.insert(new_index, state);
 
@@ -363,20 +363,20 @@ where
                         }
 
                         VecDiff::RemoveAt { index } => {
-                            let index = Self::find_index(&animations, index).unwrap_throw();
+                            let index = Self::find_index(animations, index).unwrap_throw();
 
-                            if Self::should_remove(&mut animations, cx, index) {
-                                Self::remove_index(&mut animations, index)
+                            if Self::should_remove(animations, cx, index) {
+                                Self::remove_index(animations, index)
                             } else {
                                 continue;
                             }
                         }
 
                         VecDiff::Pop {} => {
-                            let index = Self::find_last_index(&animations).unwrap_throw();
+                            let index = Self::find_last_index(animations).unwrap_throw();
 
-                            if Self::should_remove(&mut animations, cx, index) {
-                                Self::remove_index(&mut animations, index)
+                            if Self::should_remove(animations, cx, index) {
+                                Self::remove_index(animations, index)
                             } else {
                                 continue;
                             }
@@ -414,7 +414,7 @@ where
         });
 
         match index {
-            Some(index) => Self::remove_index(&mut animations, index),
+            Some(index) => Self::remove_index(animations, index),
             None => {
                 if is_done && !is_removing {
                     Poll::Ready(None)
@@ -435,7 +435,7 @@ impl Percentage {
 
     #[inline]
     pub fn new(input: f64) -> Self {
-        debug_assert!(input >= 0.0 && input <= 1.0);
+        debug_assert!((0.0..=1.0).contains(&input));
         Self::new_unchecked(input)
     }
 
@@ -604,12 +604,7 @@ impl MutableAnimation {
 
         Self {
             inner: Arc::new(MutableAnimationInner {
-                state: Mutex::new(MutableAnimationState {
-                    playing: true,
-                    duration: duration,
-                    end: initial,
-                    _animating: None,
-                }),
+                state: Mutex::new(MutableAnimationState { playing: true, duration, end: initial, _animating: None }),
                 value: Mutable::new(initial),
             }),
         }
@@ -692,8 +687,8 @@ impl MutableAnimation {
         }
     }
 
-    fn _jump_to(mut lock: &mut MutableAnimationState, mutable: &Mutable<Percentage>, end: Percentage) {
-        Self::stop_animating(&mut lock);
+    fn _jump_to(lock: &mut MutableAnimationState, mutable: &Mutable<Percentage>, end: Percentage) {
+        Self::stop_animating(lock);
 
         lock.end = end;
 
@@ -804,10 +799,10 @@ pub mod easing {
 
     impl CubicBezier {
         pub fn new(x1: f64, y1: f64, x2: f64, y2: f64) -> Self {
-            assert!(x1 >= 0.0 && x1 <= 1.0);
-            assert!(y1 >= 0.0 && y1 <= 1.0);
-            assert!(x2 >= 0.0 && x2 <= 1.0);
-            assert!(y2 >= 0.0 && y2 <= 1.0);
+            assert!((0.0..=1.0).contains(&x1));
+            assert!((0.0..=1.0).contains(&y1));
+            assert!((0.0..=1.0).contains(&x2));
+            assert!((0.0..=1.0).contains(&y2));
 
             let cx = 3.0 * x1;
             let bx = 3.0 * (x2 - x1) - cx;

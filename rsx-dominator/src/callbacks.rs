@@ -1,4 +1,4 @@
-use {discard::Discard, std};
+use discard::Discard;
 
 // TODO a bit gross
 trait IRemove {

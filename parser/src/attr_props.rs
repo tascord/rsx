@@ -37,7 +37,7 @@ mod attrs {
     use lib_macros::json;
 
     /// Attr: &[Tags]
-    pub const MAP: &'static [(&'static str, &'static [&'static str])] = &json!(
+    pub const MAP: &[(&str, &[&str])] = &json!(
         "./parser/mdn/attributes.json",
         r#"attrs => attrs.map(v => `("${v.attr}", &[${v.tags.map(v => `"${v}"`).join(", ")}])`)"#
     );

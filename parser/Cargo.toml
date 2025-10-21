@@ -1,11 +1,11 @@
 [package]
 name = "parser"
-version = "0.1.0"
+version = "0.0.0"
 edition = "2024"
 
 [dependencies]
-rsx-dominator = { path = "../rsx-dominator", version = "0.1.0" }
-lib-macros = { path = "../lib-macros", version = "0.1.0" }
+rsx-dominator = { path = "../rsx-dominator", version = "0.0.0" }
+lib-macros = { path = "../lib-macros", version = "0.0.0" }
 futures-signals = "0.3.34"
 strum = { version = "0.27.1", features = ["derive"] }
 syn = { version = "2.0.100", features = ["full"] }

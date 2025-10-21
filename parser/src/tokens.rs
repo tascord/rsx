@@ -101,7 +101,7 @@ impl Parse for Element {
             input.parse::<ShortOpen>()?;
             let ident_2 = input.parse::<Ident>().map_err(|e| er!(input, "Missing element name: {:?}", e))?;
 
-            if ident_2.to_string() != ident.to_string() {
+            if ident != ident_2 {
                 dbg!("mismatching ident");
                 panic!() // TODO
             }
@@ -109,7 +109,7 @@ impl Parse for Element {
             input.parse::<Token![>]>()?;
         }
 
-        Ok(Element { props, ident, children: children.into_iter().map(|v| Box::new(v)).collect() })
+        Ok(Element { props, ident, children: children.into_iter().map(Box::new).collect() })
     }
 }
 
@@ -217,17 +217,17 @@ impl Parse for Prop {
     }
 }
 
-impl Into<proc_macro2::TokenStream> for Element {
-    fn into(self) -> proc_macro2::TokenStream {
+impl From<Element> for proc_macro2::TokenStream {
+    fn from(val: Element) -> Self {
         use quote::quote;
 
-        let tag_name = &self.ident;
+        let tag_name = &val.ident;
         let tag_str = tag_name.to_string();
 
         // Generate attributes
         let mut methods = Vec::new();
 
-        for prop in &self.props {
+        for prop in &val.props {
             let attr_name = prop.name.to_string();
             let value = &prop.value;
             let attr_method = quote! {
@@ -237,9 +237,9 @@ impl Into<proc_macro2::TokenStream> for Element {
         }
 
         // Generate children if any
-        if !self.children.is_empty() {
+        if !val.children.is_empty() {
             let mut children = Vec::new();
-            for child in &self.children {
+            for child in &val.children {
                 let child_code: proc_macro2::TokenStream = match child.as_ref() {
                     Node::Element(element) => element.clone().into(),
                     Node::Text(text) => {
