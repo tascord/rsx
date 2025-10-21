@@ -270,7 +270,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "rsx-macro"
+name = "rsx-macros"
 version = "0.0.0"
 dependencies = [
  "heck",
@@ -301,7 +301,7 @@ version = "0.0.0"
 dependencies = [
  "futures-signals",
  "rsx-dominator",
- "rsx-macro",
+ "rsx-macros",
  "rsx-parser",
  "wasm-bindgen",
  "web-sys",

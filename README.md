@@ -60,5 +60,5 @@ Contributions are welcome if you're up for it.
 - [`./dominator`](./dominator) - Dominator vendor
 - [`./rsx-lib-macros`](./rsx-lib-macros) - Macros used within the library to make things easier (e.g. parsing MDN docs)
 - [`./parser`](./parser) - Lib tools (should probably be renamed as its not parsing stuff anymore)
-- [`./rsx-macro`](./rsx-macro) - The macro itself
+- [`./rsx-macros`](./rsx-macros) - The macro itself
 - [`./rsx`](./rsx) - The wrapper library that exports everything we need 

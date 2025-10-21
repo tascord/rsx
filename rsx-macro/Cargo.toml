@@ -1,5 +1,5 @@
 [package]
-name = "rsx-macro"
+name = "rsx-macros"
 version = "0.0.0"
 edition = "2024"
 license = "MIT"

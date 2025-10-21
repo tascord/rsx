@@ -1,10 +1,10 @@
-pub use {futures_signals, rsx_dominator as dominator, rsx_macro, wasm_bindgen};
+pub use {futures_signals, rsx_dominator as dominator, rsx_macros, wasm_bindgen};
 use {rsx_dominator::Dom, web_sys::window};
 
 pub mod prelude {
     pub use {
         rsx_dominator::*,
-        rsx_macro::*,
+        rsx_macros::*,
         wasm_bindgen::{self, prelude::*},
     };
 }

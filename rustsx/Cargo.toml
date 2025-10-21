@@ -7,7 +7,7 @@ repository = "https://github.com/tascord/rsx"
 description = "JSX-style RSX! macro"
 
 [dependencies]
-rsx-macro = { path = "../rsx-macro", version = "0.0.0" }
+rsx-macros = { path = "../rsx-macros", version = "0.0.0" }
 rsx-dominator = { path = "../rsx-dominator", version = "0.0.0" }
 rsx-parser = { path = "../rsx-parser", version = "0.0.0" }
 futures-signals = "0.3.34"
