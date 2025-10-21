@@ -59,6 +59,7 @@ pub fn json(ts: TokenStream) -> TokenStream {
         }
     };
 
+    eprintln!("Evaling {}", path);
     let items = js_lines_from_file(props.js, path)
         .into_iter()
         .map(|v| parse_str::<Expr>(&v).unwrap_or_else(|_| panic!("Failed to parse variant from JS\nArm: {v}\n")))
