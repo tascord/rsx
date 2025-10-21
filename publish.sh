@@ -15,7 +15,7 @@ TARGET_PKGS=(
     "rsx-lib-macros"
     "rsx-parser"
     "rsx-dominator"
-    "rsx-macross"
+    "rsx-macro"
 )
 
 # --- Utility Functions ---
