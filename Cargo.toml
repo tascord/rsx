@@ -5,6 +5,6 @@ members = [
     "rsx-parser",
     "rsx-lib-macros",
     "rsx-dominator",
-    "rsx-macro",
+    "rsx-macros",
     "_example",
 ]
