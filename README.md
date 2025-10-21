@@ -57,8 +57,7 @@ fn demo_component() -> dominator::Dom {
 ## Contributing
 Contributions are welcome if you're up for it.
 ### Map
-- [`./dominator`](./dominator) - Dominator vendor
-- [`./rsx-lib-macros`](./rsx-lib-macros) - Macros used within the library to make things easier (e.g. parsing MDN docs)
-- [`./parser`](./parser) - Lib tools (should probably be renamed as its not parsing stuff anymore)
+- [`./rsx-dominator`](./rsx-dominator) - Dominator vendor
+- [`./rsx-parser`](./rsx-parser) - Lib tools (should probably be renamed as its not parsing stuff anymore)
 - [`./rsx-macros`](./rsx-macros) - The macro itself
-- [`./rsx`](./rsx) - The wrapper library that exports everything we need 
+- [`./rustsx`](./rustsx) - The wrapper library that exports everything we need 

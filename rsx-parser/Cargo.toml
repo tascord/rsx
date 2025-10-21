@@ -8,7 +8,6 @@ description = "Helper for the rsx crate"
 
 [dependencies]
 rsx-dominator = { path = "../rsx-dominator", version = "0.0.0" }
-rsx-lib-macros = { path = "../rsx-lib-macros", version = "0.0.0" }
 futures-signals = "0.3.34"
 strum = { version = "0.27.1", features = ["derive"] }
 syn = { version = "2.0.100", features = ["full"] }

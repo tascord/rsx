@@ -260,16 +260,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "rsx-lib-macros"
-version = "0.0.0"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
- "web-sys",
-]
-
-[[package]]
 name = "rsx-macros"
 version = "0.0.0"
 dependencies = [
@@ -289,7 +279,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "rsx-dominator",
- "rsx-lib-macros",
  "strum",
  "syn",
  "web-sys",

@@ -3,7 +3,6 @@ resolver = "2"
 members = [
     "rustsx",
     "rsx-parser",
-    "rsx-lib-macros",
     "rsx-dominator",
     "rsx-macros",
     "_example",
