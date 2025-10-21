@@ -1,6 +1,6 @@
 [package]
 name = "rsx-macros"
-version = "0.0.0"
+version = "0.1.0"
 edition = "2024"
 license = "MIT"
 repository = "https://github.com/tascord/rsx"
@@ -10,7 +10,7 @@ description = "Helper for the rsx crate"
 proc-macro = true
 
 [dependencies]
-rsx-parser = { path = "../rsx-parser", version = "0.0.0" }
+rsx-parser = { path = "../rsx-parser", version = "0.1.0" }
 proc-macro2 = "1.0.94"
 quote = "1.0.40"
 syn = { version = "2.0.100", features = ["fold", "visit"] }

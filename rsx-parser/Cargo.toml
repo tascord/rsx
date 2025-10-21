@@ -1,13 +1,13 @@
 [package]
 name = "rsx-parser"
-version = "0.0.0"
+version = "0.1.0"
 edition = "2024"
 license = "MIT"
 repository = "https://github.com/tascord/rsx"
 description = "Helper for the rsx crate"
 
 [dependencies]
-rsx-dominator = { path = "../rsx-dominator", version = "0.0.0" }
+rsx-dominator = { path = "../rsx-dominator", version = "0.1.0" }
 futures-signals = "0.3.34"
 strum = { version = "0.27.1", features = ["derive"] }
 syn = { version = "2.0.100", features = ["full"] }

@@ -1,6 +1,6 @@
 [package]
 name = "rsx-dominator"
-version = "0.0.0"
+version = "0.1.0"
 authors = ["Pauan <pauanyu+github@pm.me>"]
 description = "Zero-cost ultra-high-performance declarative DOM library using FRP signals"
 homepage = "https://github.com/Pauan/rust-dominator"
