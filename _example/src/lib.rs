@@ -1,6 +1,6 @@
 use {
     futures_signals::signal::Mutable,
-    rsx::{
+    rustsx::{
         dominator,
         prelude::{events::KeyUp, *},
     },

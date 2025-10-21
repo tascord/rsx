@@ -1,7 +1,7 @@
 [workspace]
 resolver = "2"
 members = [
-    "rsx",
+    "rustsx",
     "rsx-parser",
     "rsx-lib-macros",
     "rsx-dominator",

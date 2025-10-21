@@ -42,7 +42,7 @@ version = "0.0.0"
 dependencies = [
  "console_error_panic_hook",
  "futures-signals",
- "rsx",
+ "rustsx",
  "wasm-bindgen",
  "web-sys",
 ]
@@ -243,18 +243,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "69cdb34c158ceb288df11e18b4bd39de994f6657d83847bdffdbd7f346754b0f"
 
 [[package]]
-name = "rsx"
-version = "0.0.0"
-dependencies = [
- "futures-signals",
- "rsx-dominator",
- "rsx-macro",
- "rsx-parser",
- "wasm-bindgen",
- "web-sys",
-]
-
-[[package]]
 name = "rsx-dominator"
 version = "0.0.0"
 dependencies = [
@@ -304,6 +292,18 @@ dependencies = [
  "rsx-lib-macros",
  "strum",
  "syn",
+ "web-sys",
+]
+
+[[package]]
+name = "rustsx"
+version = "0.0.0"
+dependencies = [
+ "futures-signals",
+ "rsx-dominator",
+ "rsx-macro",
+ "rsx-parser",
+ "wasm-bindgen",
  "web-sys",
 ]
 

@@ -4,8 +4,8 @@
 ## JSX-like syntax for Rust+WASM via [Dominator](https://github.com/Pauan/rust-dominator)
 
 [![GitHub top language](https://img.shields.io/github/languages/top/tascord/rsx?color=0072CE&style=for-the-badge)](#)
-[![Crates.io Version](https://img.shields.io/crates/v/rsx?style=for-the-badge)](https://crates.io/crates/rsx)
-[![docs.rs](https://img.shields.io/docsrs/rsx?style=for-the-badge)](https://docs.rs/rsx)
+[![Crates.io Version](https://img.shields.io/crates/v/rustsx?style=for-the-badge)](https://crates.io/crates/rustsx)
+[![docs.rs](https://img.shields.io/docsrs/rustsx?style=for-the-badge)](https://docs.rs/rustsx)
 
 ## Why??????????
 A question i ask myself every day man
