@@ -1,8 +1,8 @@
 use {
     heck::ToPascalCase,
-    parser::tokens::Element,
     proc_macro::TokenStream,
     quote::quote,
+    rsx_parser::tokens::Element,
     std::collections::HashSet,
     syn::{Expr, visit::Visit},
 };
@@ -149,7 +149,7 @@ fn generate_dom_code(element: &Element) -> proc_macro2::TokenStream {
     }
 }
 
-fn generate_attribute_code(prop: &parser::tokens::Prop) -> proc_macro2::TokenStream {
+fn generate_attribute_code(prop: &rsx_parser::tokens::Prop) -> proc_macro2::TokenStream {
     let attr_name = prop.name.to_string();
     let value = &prop.value;
 
@@ -245,8 +245,8 @@ fn generate_attribute_code(prop: &parser::tokens::Prop) -> proc_macro2::TokenStr
     }
 }
 
-fn generate_child_code(child: &parser::tokens::Node) -> Vec<proc_macro2::TokenStream> {
-    use parser::tokens::Node;
+fn generate_child_code(child: &rsx_parser::tokens::Node) -> Vec<proc_macro2::TokenStream> {
+    use rsx_parser::tokens::Node;
     match child {
         Node::Element(element) => vec![generate_dom_code(element)],
         Node::Text(text) => {

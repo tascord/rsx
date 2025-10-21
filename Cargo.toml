@@ -1,3 +1,10 @@
 [workspace]
 resolver = "2"
-members = ["parser", "lib-macros", "rsx-dominator", "rsx-macro", "_example", "rsx"]
+members = [
+    "rsx",
+    "rsx-parser",
+    "rsx-lib-macros",
+    "rsx-dominator",
+    "rsx-macro",
+    "_example",
+]

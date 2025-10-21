@@ -1,5 +1,5 @@
 [package]
-name = "rsx-macro"
+name = "rsx-lib-macros"
 version = "0.0.0"
 edition = "2024"
 license = "MIT"
@@ -10,8 +10,10 @@ description = "Helper for the rsx crate"
 proc-macro = true
 
 [dependencies]
-rsx-parser = { path = "../rsx-parser", version = "0.0.0" }
 proc-macro2 = "1.0.94"
 quote = "1.0.40"
-syn = { version = "2.0.100", features = ["fold", "visit"] }
-heck = "0.5"
+syn = "2.0.100"
+
+[dependencies.web-sys]
+version = "0.3"
+features = ["console", "Document", "Element", "HtmlElement", "Window"]

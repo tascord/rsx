@@ -11,7 +11,7 @@ set -e
 # Define the array of target Rust package directories.
 # NOTE: These names must match the directory names.
 TARGET_PKGS=(
-    "lib-macros"
+    "rsx-lib-macros"
     "parser"
     "rsx"
     "rsx-dominator"

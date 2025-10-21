@@ -34,11 +34,11 @@ pub fn bind<
 }
 
 mod attrs {
-    use lib_macros::json;
+    use rsx_lib_macros::json;
 
     /// Attr: &[Tags]
     pub const MAP: &[(&str, &[&str])] = &json!(
-        "../parser/mdn/attributes.json",
+        "../rsx-parser/mdn/attributes.json",
         r#"attrs => attrs.map(v => `("${v.attr}", &[${v.tags.map(v => `"${v}"`).join(", ")}])`)"#
     );
 }

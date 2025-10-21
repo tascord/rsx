@@ -1,6 +1,6 @@
 use {
     proc_macro2::Literal,
-    syn::{Ident, Token, buffer::Cursor, parse::Parse},
+    syn::{Expr, Ident, Token, buffer::Cursor, parse::Parse},
 };
 
 pub struct JsonEnumProps {
@@ -35,13 +35,13 @@ impl Parse for JsonEnumProps {
 }
 
 pub struct JsonLines {
-    pub path: String,
+    pub path: Expr,
     pub js: String,
 }
 
 impl Parse for JsonLines {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
-        let path = input.parse::<Literal>().expect("Expected literal for path").to_string();
+        let path: Expr = input.parse().expect("Expected expression for path");
 
         input.peek(Token![,]).then_some(()).inspect(|_| {
             let _ = input.parse::<Token![,]>();
