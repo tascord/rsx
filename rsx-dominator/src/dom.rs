@@ -641,11 +641,10 @@ where
         })
     });
 
-    if okay.is_none()
-        && cfg!(debug_assertions) {
-            // TODO maybe make this configurable
-            panic!("style is incorrect:\n  names: {}\n  values: {}", names.join(", "), values.join(", "));
-        }
+    if okay.is_none() && cfg!(debug_assertions) {
+        // TODO maybe make this configurable
+        panic!("style is incorrect:\n  names: {}\n  values: {}", names.join(", "), values.join(", "));
+    }
 }
 
 // TODO should this inline ?
@@ -723,8 +722,7 @@ where
     });
 }
 
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
-#[derive(Default)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Default)]
 pub struct EventOptions {
     pub bubbles: bool,
     pub preventable: bool,
@@ -746,7 +744,6 @@ impl EventOptions {
         }
     }
 }
-
 
 /// Scroll behavior for [`ScrollIntoView`].
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
@@ -2206,7 +2203,7 @@ mod tests {
             .style_signal("foo", always("bar".to_owned()).map(|x| RefFn::new(x, |x| x.as_str())))
             .style("foo".to_owned(), "bar".to_owned())
             .style_signal("foo".to_owned(), always("bar".to_owned()))
-            .style(&"foo".to_owned(), &"bar".to_owned())
+            .style("foo".to_owned(), "bar".to_owned())
             //.style(Box::new("foo".to_owned()), Box::new("bar".to_owned()))
             //.style_signal(Box::new("foo".to_owned()), always(Box::new("bar".to_owned())))
             .style_signal(&*FOO, always(&*FOO))

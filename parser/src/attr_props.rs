@@ -38,7 +38,7 @@ mod attrs {
 
     /// Attr: &[Tags]
     pub const MAP: &[(&str, &[&str])] = &json!(
-        "./parser/mdn/attributes.json",
+        "../parser/mdn/attributes.json",
         r#"attrs => attrs.map(v => `("${v.attr}", &[${v.tags.map(v => `"${v}"`).join(", ")}])`)"#
     );
 }
