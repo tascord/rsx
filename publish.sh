@@ -12,7 +12,6 @@ set -e
 # NOTE: These names must match the directory names.
 TARGET_PKGS=(
     "rustsx"
-    "rsx-lib-macros"
     "rsx-parser"
     "rsx-dominator"
     "rsx-macros"
