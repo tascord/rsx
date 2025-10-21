@@ -174,24 +174,6 @@ for dependent_pkg_dir in "${TARGET_PKGS[@]}"; do
     done
 done
 
-
-# --- Dry Run Publish ---
-
-echo "--- Performing Dry Run of Cargo Publish ---"
-
-# Perform dry run for each package individually in dependency order
-for pkg_dir in "${TARGET_PKGS[@]}"; do
-    PKG_NAME=$(toml get package.name --toml-path "$pkg_dir/Cargo.toml")
-    echo "Dry-run publishing $PKG_NAME..."
-    
-    if ! cargo +nightly publish -p "$PKG_NAME" --dry-run --allow-dirty; then
-        echo "Cargo dry-run failed for $PKG_NAME. Reverting changes and exiting."
-        cleanup_and_exit
-    fi
-done
-
-# --- Commit and Push ---
-
 echo "--- Committing and Pushing Changes ---"
 
 COMMIT_MESSAGE="Bump version $CURRENT_VERSION -> $NEXT_VERSION"
