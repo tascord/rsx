@@ -1,18 +1,16 @@
-use std::process::Command;
-
-use proc_macro::TokenStream;
-use quote::quote;
-use syn::{parse_macro_input, parse_str, Expr, Variant};
-use ty::json::{JsonEnumProps, JsonLines};
+use {
+    proc_macro::TokenStream,
+    quote::quote,
+    std::process::Command,
+    syn::{Expr, Variant, parse_macro_input, parse_str},
+    ty::json::{JsonEnumProps, JsonLines},
+};
 
 mod ty;
 
 fn js_lines_from_file(js: String, path: String) -> Vec<String> {
     let output = &Command::new("node")
-        .args([
-            "-e",
-            &format!("console.log((({js})(require({path}))).join('\\n'))",),
-        ])
+        .args(["-e", &format!("console.log((({js})(require({path}))).join('\\n'))",)])
         .output()
         .unwrap();
 
@@ -32,10 +30,7 @@ pub fn json_enum(ts: TokenStream) -> TokenStream {
 
     let variants = js_lines_from_file(props.js, props.path)
         .into_iter()
-        .map(|v| {
-            parse_str::<Variant>(&v)
-                .expect(&format!("Failed to parse variant from JS\nVariant: {v}\n"))
-        })
+        .map(|v| parse_str::<Variant>(&v).expect(&format!("Failed to parse variant from JS\nVariant: {v}\n")))
         .collect::<Vec<_>>();
 
     let name = props.ident;
@@ -54,9 +49,7 @@ pub fn json(ts: TokenStream) -> TokenStream {
 
     let items = js_lines_from_file(props.js, props.path)
         .into_iter()
-        .map(|v| {
-            parse_str::<Expr>(&v).expect(&format!("Failed to parse variant from JS\nArm: {v}\n"))
-        })
+        .map(|v| parse_str::<Expr>(&v).expect(&format!("Failed to parse variant from JS\nArm: {v}\n")))
         .collect::<Vec<_>>();
 
     quote! {

@@ -4,11 +4,11 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-dominator = { path = "../dominator" }
+rsx-dominator = { path = "../rsx-dominator", version = "0.1.0" }
+lib-macros = { path = "../lib-macros", version = "0.1.0" }
 futures-signals = "0.3.34"
 strum = { version = "0.27.1", features = ["derive"] }
 syn = { version = "2.0.100", features = ["full"] }
-macros = { path = "../macros" }
 proc-macro2 = "1.0.94"
 itertools = "0.14.0"
 quote = "1.0.40"

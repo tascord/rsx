@@ -7,7 +7,8 @@ edition = "2024"
 proc-macro = true
 
 [dependencies]
-parser = { path = "../parser" }
+parser = { path = "../parser", version = "0.1.0" }
 proc-macro2 = "1.0.94"
 quote = "1.0.40"
-syn = "2.0.100"
+syn = { version = "2.0.100", features = ["fold", "visit"] }
+heck = "0.5"

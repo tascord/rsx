@@ -1,0 +1,2267 @@
+use {
+    crate::{
+        bindings::{self, WINDOW, create_empty_node, create_text_node},
+        callbacks::Callbacks,
+        fragment::{Fragment, FragmentBuilder},
+        operations::{self, for_each, spawn_future},
+        traits::*,
+        utils::{EventListener, FnDiscard, MutableListener, RefCounter, UnwrapJsExt, ValueDiscard, on},
+    },
+    discard::{Discard, DiscardOnDrop},
+    futures_channel::oneshot,
+    futures_signals::{
+        signal::{Mutable, MutableSignal, Signal, not},
+        signal_vec::SignalVec,
+    },
+    futures_util::FutureExt,
+    once_cell::sync::Lazy,
+    std::{
+        borrow::BorrowMut,
+        convert::AsRef,
+        ffi::os_str::Display,
+        future::Future,
+        pin::Pin,
+        task::{Context, Poll},
+    },
+    wasm_bindgen::{JsCast, JsValue, UnwrapThrowExt, intern},
+    web_sys::{
+        CssRule, CssStyleDeclaration, CssStyleRule, CssStyleSheet, Element, EventTarget, HtmlElement, Node, ShadowRoot,
+        ShadowRootInit, ShadowRootMode, Text,
+    },
+};
+
+#[cfg(doc)]
+use crate::fragment;
+
+pub struct RefFn<A, B, C>
+where
+    B: ?Sized,
+    C: Fn(&A) -> &B,
+{
+    value: A,
+    callback: C,
+}
+
+impl<A, B, C> RefFn<A, B, C>
+where
+    B: ?Sized,
+    C: Fn(&A) -> &B,
+{
+    #[inline]
+    pub fn new(value: A, callback: C) -> Self { Self { value, callback } }
+
+    #[inline]
+    pub fn call_ref(&self) -> &B { (self.callback)(&self.value) }
+
+    // pub fn map<D, E>(self, callback: E) -> RefFn<A, impl Fn(&A) -> &D>
+    // where D: ?Sized,
+    // E: Fn(&B) -> &D {
+    //
+    // let old_callback = self.callback;
+    //
+    // RefFn {
+    // value: self.value,
+    // callback: move |value| callback(old_callback(value)),
+    // }
+    // }
+}
+
+// impl<A, B, C> Deref for RefFn<A, C> where B: ?Sized, C: Fn(&A) -> &B {
+// type Target = B;
+//
+// #[inline]
+// fn deref(&self) -> &Self::Target {
+// self.call_ref()
+// }
+// }
+
+// impl<A, B, C> AsRef<B> for RefFn<A, C> where B: ?Sized, C: Fn(&A) -> &B {
+// #[inline]
+// fn as_ref(&self) -> &B {
+// self.call_ref()
+// }
+// }
+
+// https://developer.mozilla.org/en-US/docs/Web/API/Document/createElementNS#Valid%20Namespace%20URIs
+const SVG_NAMESPACE: &str = "http://www.w3.org/2000/svg";
+
+// 32-bit signed int
+pub const HIGHEST_ZINDEX: &str = "2147483647";
+
+static HIDDEN_CLASS: Lazy<String> = Lazy::new(|| {
+    class! {
+        .style_important("display", "none")
+    }
+});
+
+// TODO should return HtmlBodyElement ?
+pub fn body() -> HtmlElement { bindings::body() }
+
+pub fn get_id(id: &str) -> Element {
+    // TODO intern ?
+    bindings::get_element_by_id(id)
+}
+
+pub struct DomHandle {
+    parent: Node,
+    dom: Dom,
+}
+
+impl DomHandle {
+    /// Initializes the state after inserting a [`Dom`] into the real DOM.
+    ///
+    /// You shouldn't normally use this, use [`append_dom`] instead.
+    ///
+    /// But in some very rare situations you might want to manually
+    /// control where the [`Dom`] is inserted.
+    #[inline]
+    pub(crate) fn new(parent: &Node, mut dom: Dom) -> Self {
+        dom.callbacks.trigger_after_insert();
+
+        // This prevents it from triggering after_remove
+        dom.callbacks.leak();
+
+        Self { parent: parent.clone(), dom }
+    }
+}
+
+impl Discard for DomHandle {
+    #[inline]
+    #[track_caller]
+    fn discard(self) {
+        bindings::remove_child(&self.parent, &self.dom.element);
+        self.dom.callbacks.discard();
+    }
+}
+
+/// Appends a [`Dom`] into the real DOM.
+///
+/// When the [`DomHandle`] is discarded using `handle.discard()` it
+/// will remove the [`Dom`] from the DOM and it will clean up the
+/// internal [`Dom`] state.
+///
+/// If you never call `handle.discard()` then it will leak memory
+/// forever. This is normally what you want for a top-level [`Dom`].
+#[inline]
+#[track_caller]
+pub fn append_dom(parent: &Node, dom: Dom) -> DomHandle {
+    bindings::append_child(&parent, &dom.element);
+    DomHandle::new(parent, dom)
+}
+
+/// The same as [`append_dom`] except it replaces an existing DOM node.
+#[inline]
+#[track_caller]
+pub fn replace_dom(parent: &Node, old_node: &Node, dom: Dom) -> DomHandle {
+    bindings::replace_child(&parent, &dom.element, old_node);
+    DomHandle::new(parent, dom)
+}
+
+#[must_use = "Signals do nothing unless polled"]
+enum IsWindowLoaded {
+    Initial {},
+    Pending { receiver: oneshot::Receiver<Option<bool>>, _event: DiscardOnDrop<EventListener> },
+    Done {},
+}
+
+impl Signal for IsWindowLoaded {
+    type Item = bool;
+
+    fn poll_change(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<Option<Self::Item>> {
+        let result = match *self {
+            IsWindowLoaded::Initial {} => {
+                let is_ready = bindings::ready_state() == "complete";
+
+                if is_ready {
+                    Poll::Ready(Some(true))
+                } else {
+                    let (sender, receiver) = oneshot::channel();
+
+                    *self = IsWindowLoaded::Pending {
+                        receiver,
+                        _event: DiscardOnDrop::new(WINDOW.with(|window| {
+                            EventListener::once(window, "load", move |_| {
+                                // TODO test this
+                                crate::__unwrap!(
+                                    sender.send(Some(true)),
+                                    _e => panic!("Invalid is_window_loaded() state"),
+                                )
+                            })
+                        })),
+                    };
+
+                    Poll::Ready(Some(false))
+                }
+            }
+            IsWindowLoaded::Pending { ref mut receiver, .. } => receiver.poll_unpin(cx).map(|x| x.unwrap_throw()),
+            IsWindowLoaded::Done {} => Poll::Ready(None),
+        };
+
+        if let Poll::Ready(Some(true)) = result {
+            *self = IsWindowLoaded::Done {};
+        }
+
+        result
+    }
+}
+
+// TODO this should be moved into gloo
+/// `Signal` which says whether the window is fully loaded or not.
+///
+/// This is the same as the [DOM `load` event](https://developer.mozilla.org/en-US/docs/Web/API/Window/load_event).
+#[inline]
+pub fn is_window_loaded() -> impl Signal<Item = bool> { IsWindowLoaded::Initial {} }
+
+/// This is returned by the [`window_size`] function.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct WindowSize {
+    pub width: f64,
+    pub height: f64,
+}
+
+impl WindowSize {
+    fn new() -> Self {
+        WINDOW.with(|window| {
+            let width = window.inner_width().unwrap_throw().as_f64().unwrap_throw();
+            let height = window.inner_height().unwrap_throw().as_f64().unwrap_throw();
+
+            Self { width, height }
+        })
+    }
+}
+
+thread_local! {
+    static WINDOW_SIZE: RefCounter<MutableListener<WindowSize>> = RefCounter::new();
+}
+
+#[derive(Debug)]
+#[must_use = "Signals do nothing unless polled"]
+struct WindowSizeSignal {
+    signal: MutableSignal<WindowSize>,
+}
+
+impl Signal for WindowSizeSignal {
+    type Item = WindowSize;
+
+    #[inline]
+    fn poll_change(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<Option<Self::Item>> {
+        Pin::new(&mut self.signal).poll_change(cx)
+    }
+}
+
+impl Drop for WindowSizeSignal {
+    fn drop(&mut self) {
+        WINDOW_SIZE.with(|size| {
+            size.decrement();
+        });
+    }
+}
+
+/// `Signal` which gives the current width / height of the window.
+///
+/// When the window is resized, it will automatically update with the new size.
+pub fn window_size() -> impl Signal<Item = WindowSize> {
+    let signal = WINDOW_SIZE.with(|size| {
+        let size = size.increment(|| {
+            let size = Mutable::new(WindowSize::new());
+
+            let listener = {
+                let size = size.clone();
+
+                WINDOW.with(move |window| {
+                    on(window, &EventOptions::default(), move |_: crate::events::Resize| {
+                        size.set_neq(WindowSize::new());
+                    })
+                })
+            };
+
+            MutableListener::new(size, listener)
+        });
+
+        size.as_mutable().signal()
+    });
+
+    WindowSizeSignal { signal }
+}
+
+fn media_query_raw<A, F>(query: &str, mut f: F) -> (Mutable<A>, EventListener)
+where
+    A: PartialEq + 'static,
+    F: FnMut(bool) -> A + 'static,
+{
+    let query = WINDOW.with(|window| window.match_media(query).unwrap().unwrap());
+
+    let mutable = Mutable::new(f(query.matches()));
+
+    let listener = on(&query, &EventOptions::default(), {
+        let mutable = mutable.clone();
+        let query = query.clone();
+
+        move |_: crate::events::Change| {
+            mutable.set_neq(f(query.matches()));
+        }
+    });
+
+    (mutable, listener)
+}
+
+#[derive(Debug)]
+#[must_use = "Signals do nothing unless polled"]
+struct MediaQuerySignal {
+    signal: MutableSignal<bool>,
+    _listener: EventListener,
+}
+
+impl Signal for MediaQuerySignal {
+    type Item = bool;
+
+    #[inline]
+    fn poll_change(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<Option<Self::Item>> {
+        Pin::new(&mut self.signal).poll_change(cx)
+    }
+}
+
+/// `Signal` which is `true` if the media query matches.
+///
+/// The Signal will automatically update when the situation changes.
+///
+/// [MDN documentation](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_media_queries)
+///
+/// # Example
+///
+/// ```rust
+/// media_query("(max-width: 500px) and (max-height: 300px)").map(|small| {
+///     // The window is less than 500px wide AND the window is less than 300px tall
+///     if small {
+///         ...
+///
+///     } else {
+///         ...
+///     }
+/// })
+/// ```
+///
+/// ```rust
+/// media_query("(orientation: portrait)").map(|portrait| {
+///     if portrait {
+///         // The browser is in portrait mode
+///
+///     } else {
+///         // The browser is in landscape mode
+///     }
+/// })
+/// ```
+///
+/// ```rust
+/// media_query("(display-mode: fullscreen)").map(|fullscreen| {
+///     if fullscreen {
+///         // The browser is in fullscreen mode
+///
+///     } else {
+///         // The browser is not in fullscreen mode
+///     }
+/// })
+/// ```
+pub fn media_query(query: &str) -> impl Signal<Item = bool> {
+    let (mutable, listener) = media_query_raw(query, |value| value);
+
+    MediaQuerySignal { signal: mutable.signal(), _listener: listener }
+}
+
+/// Color scheme of the browser.
+///
+/// This is returned from the [`color_scheme`] function.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ColorScheme {
+    Light,
+    Dark,
+}
+
+impl ColorScheme {
+    #[inline]
+    fn from_bool(matches: bool) -> Self { if matches { Self::Dark } else { Self::Light } }
+
+    /// Whether the color scheme is light.
+    #[inline]
+    pub fn is_light(self) -> bool { matches!(self, Self::Light) }
+
+    /// Whether the color scheme is dark.
+    #[inline]
+    pub fn is_dark(self) -> bool { matches!(self, Self::Dark) }
+
+    /// Chooses a value based on whether the color scheme is light or dark.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// // If the color scheme is light, then it returns "white"
+    /// // If the color scheme is dark, then it returns "black"
+    /// color_scheme().map(|x| x.choose("white", "black"))
+    /// ```
+    #[inline]
+    pub fn choose<A>(self, light: A, dark: A) -> A {
+        match self {
+            Self::Light => light,
+            Self::Dark => dark,
+        }
+    }
+}
+
+thread_local! {
+    static COLOR_SCHEME: RefCounter<MutableListener<ColorScheme>> = RefCounter::new();
+}
+
+#[derive(Debug)]
+#[must_use = "Signals do nothing unless polled"]
+struct ColorSchemeSignal {
+    signal: MutableSignal<ColorScheme>,
+}
+
+impl Signal for ColorSchemeSignal {
+    type Item = ColorScheme;
+
+    #[inline]
+    fn poll_change(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<Option<Self::Item>> {
+        Pin::new(&mut self.signal).poll_change(cx)
+    }
+}
+
+impl Drop for ColorSchemeSignal {
+    fn drop(&mut self) { COLOR_SCHEME.with(|x| x.decrement()); }
+}
+
+/// The color scheme of the browser.
+///
+/// This can be used to automatically adjust your website's colors based on
+/// whether the user prefers dark mode or light mode.
+///
+/// [MDN documentation](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-color-scheme)
+pub fn color_scheme() -> impl Signal<Item = ColorScheme> {
+    let signal = COLOR_SCHEME.with(|counter| {
+        let counter = counter.increment(|| {
+            let (mutable, listener) = media_query_raw("(prefers-color-scheme: dark)", ColorScheme::from_bool);
+
+            MutableListener::new(mutable, listener)
+        });
+
+        counter.as_mutable().signal()
+    });
+
+    ColorSchemeSignal { signal }
+}
+
+// TODO should this intern ?
+#[inline]
+pub fn text(value: &str) -> Dom { Dom::new(bindings::create_text_node(value).into()) }
+
+fn make_text_signal<A, B>(callbacks: &mut Callbacks, value: B) -> Text
+where
+    A: AsStr,
+    B: Signal<Item = A> + 'static,
+{
+    let element = bindings::create_text_node(intern(""));
+
+    {
+        let element = element.clone();
+
+        callbacks.after_remove(for_each(value, move |value| {
+            value.with_str(|value| {
+                // TODO maybe this should intern ?
+                bindings::set_text(&element, value);
+            });
+        }));
+    }
+
+    element
+}
+
+// TODO should this inline ?
+pub fn text_signal<A, B>(value: B) -> Dom
+where
+    A: AsStr,
+    B: Signal<Item = A> + 'static,
+{
+    let mut callbacks = Callbacks::new();
+
+    let element = make_text_signal(&mut callbacks, value);
+
+    Dom { element: element.into(), callbacks: callbacks }
+}
+
+// TODO better warning message for must_use
+#[must_use]
+#[derive(Debug)]
+pub struct Dom {
+    pub(crate) element: Node,
+    pub(crate) callbacks: Callbacks,
+}
+
+impl Dom {
+    pub fn text(value: impl std::fmt::Display) -> Dom {
+        Dom { element: create_text_node(&value.to_string()).into(), callbacks: Callbacks::new() }
+    }
+
+    pub fn text_signal<A, B>(value: B) -> Dom
+    where
+        A: AsStr,
+        B: Signal<Item = A> + 'static,
+    {
+        let mut d = Dom { element: create_text_node(Default::default()).into(), callbacks: Callbacks::new() };
+
+        d.element = make_text_signal(&mut d.callbacks, value).into();
+        d
+    }
+}
+
+impl Dom {
+    #[inline]
+    pub fn as_html_element(&self) -> Option<HtmlElement> { self.element.dyn_ref().cloned() }
+}
+
+impl AsRef<Node> for Dom {
+    fn as_ref(&self) -> &Node { &self.element }
+}
+
+impl Dom {
+    #[inline]
+    pub fn new(element: Node) -> Self { Self { element, callbacks: Callbacks::new() } }
+
+    #[inline]
+    #[track_caller]
+    pub fn empty() -> Self { Self::new(bindings::create_empty_node()) }
+
+    #[deprecated(since = "0.5.15", note = "Store the data explicitly in a component struct instead")]
+    #[inline]
+    pub fn with_state<A, F>(mut state: A, initializer: F) -> Dom
+    where
+        A: 'static,
+        F: FnOnce(&mut A) -> Dom,
+    {
+        let mut dom = initializer(&mut state);
+
+        dom.callbacks.after_remove(ValueDiscard::new(state));
+
+        dom
+    }
+}
+
+#[inline]
+#[track_caller]
+fn create_element<A>(name: &str) -> A
+where
+    A: JsCast,
+{
+    // TODO use unchecked_into in release mode ?
+    crate::__unwrap!(
+        bindings::create_element(intern(name)).dyn_into(),
+        e => panic!("Invalid DOM type: \"{}\" => {:?}", name, JsValue::as_ref(&e)),
+    )
+}
+
+#[inline]
+#[track_caller]
+fn create_element_ns<A>(name: &str, namespace: &str) -> A
+where
+    A: JsCast,
+{
+    // TODO use unchecked_into in release mode ?
+    crate::__unwrap!(
+        bindings::create_element_ns(intern(namespace), intern(name)).dyn_into(),
+        e => panic!("Invalid DOM type: \"{}\" => {:?}", name, JsValue::as_ref(&e)),
+    )
+}
+
+// TODO should this inline ?
+fn set_option<A, B, C, D, F>(element: A, callbacks: &mut Callbacks, value: D, mut f: F)
+where
+    A: 'static,
+    C: OptionStr<Output = B>,
+    D: Signal<Item = C> + 'static,
+    F: FnMut(&A, Option<B>) + 'static,
+{
+    let mut is_set = false;
+
+    callbacks.after_remove(for_each(value, move |value| {
+        let value = value.into_option();
+
+        if value.is_some() {
+            is_set = true;
+        } else if is_set {
+            is_set = false;
+        } else {
+            return;
+        }
+
+        f(&element, value);
+    }));
+}
+
+// TODO should this inline ?
+// TODO track_caller
+fn set_style<A, B>(style: &CssStyleDeclaration, name: &A, value: B, important: bool)
+where
+    A: MultiStr,
+    B: MultiStr,
+{
+    let mut names = vec![];
+    let mut values = vec![];
+
+    // TODO track_caller
+    fn try_set_style(
+        style: &CssStyleDeclaration,
+        names: &mut Vec<String>,
+        values: &mut Vec<String>,
+        name: &str,
+        value: &str,
+        important: bool,
+    ) -> Option<()> {
+        assert!(value != "");
+
+        // TODO handle browser prefixes ?
+        bindings::remove_style(style, name);
+
+        bindings::set_style(style, name, value, important);
+
+        let is_changed = bindings::get_style(style, name) != "";
+
+        if is_changed {
+            Some(())
+        } else {
+            names.push(String::from(name));
+            values.push(String::from(value));
+            None
+        }
+    }
+
+    let okay = name.find_map(|name| {
+        let name: &str = intern(name);
+
+        value.find_map(|value| {
+            // TODO should this intern ?
+            try_set_style(style, &mut names, &mut values, &name, &value, important)
+        })
+    });
+
+    if let None = okay {
+        if cfg!(debug_assertions) {
+            // TODO maybe make this configurable
+            panic!("style is incorrect:\n  names: {}\n  values: {}", names.join(", "), values.join(", "));
+        }
+    }
+}
+
+// TODO should this inline ?
+// TODO track_caller
+fn set_style_signal<A, B, C, D>(style: CssStyleDeclaration, callbacks: &mut Callbacks, name: A, value: D, important: bool)
+where
+    A: MultiStr + 'static,
+    B: MultiStr,
+    C: OptionStr<Output = B>,
+    D: Signal<Item = C> + 'static,
+{
+    set_option(style, callbacks, value, move |style, value| {
+        match value {
+            Some(value) => {
+                // TODO should this intern or not ?
+                set_style(style, &name, value, important);
+            }
+            None => {
+                name.each(|name| {
+                    // TODO handle browser prefixes ?
+                    bindings::remove_style(style, intern(name));
+                });
+            }
+        }
+    });
+}
+
+// TODO should this inline ?
+// TODO track_caller
+fn set_style_unchecked_signal<A, B, C, D>(
+    style: CssStyleDeclaration,
+    callbacks: &mut Callbacks,
+    name: A,
+    value: D,
+    important: bool,
+) where
+    A: AsStr + 'static,
+    B: AsStr,
+    C: OptionStr<Output = B>,
+    D: Signal<Item = C> + 'static,
+{
+    set_option(style, callbacks, value, move |style, value| match value {
+        Some(value) => {
+            name.with_str(|name| {
+                let name: &str = intern(name);
+
+                value.with_str(|value| {
+                    bindings::set_style(style, name, value, important);
+                });
+            });
+        }
+        None => {
+            name.with_str(|name| {
+                bindings::remove_style(style, intern(name));
+            });
+        }
+    });
+}
+
+// TODO check that the property *actually* was changed ?
+// TODO maybe use AsRef<Object> ?
+// TODO should this inline ?
+#[track_caller]
+fn set_property<A, B, C>(element: &A, name: &B, value: C)
+where
+    A: AsRef<JsValue>,
+    B: MultiStr,
+    C: Into<JsValue>,
+{
+    let element = element.as_ref();
+    let value = value.into();
+
+    name.each(|name| {
+        bindings::set_property(element, intern(name), &value);
+    });
+}
+
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
+pub struct EventOptions {
+    pub bubbles: bool,
+    pub preventable: bool,
+}
+
+impl EventOptions {
+    pub fn bubbles() -> Self { Self { bubbles: true, preventable: false } }
+
+    pub fn preventable() -> Self { Self { bubbles: false, preventable: true } }
+
+    pub(crate) fn into_gloo(self) -> gloo_events::EventListenerOptions {
+        gloo_events::EventListenerOptions {
+            phase: if self.bubbles {
+                gloo_events::EventListenerPhase::Bubble
+            } else {
+                gloo_events::EventListenerPhase::Capture
+            },
+            passive: !self.preventable,
+        }
+    }
+}
+
+impl Default for EventOptions {
+    fn default() -> Self { Self { bubbles: false, preventable: false } }
+}
+
+/// Scroll behavior for [`ScrollIntoView`].
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
+pub enum ScrollBehavior {
+    /// The behavior is determined by the [`scroll-behavior`](https://developer.mozilla.org/en-US/docs/Web/CSS/scroll-behavior) CSS property.
+    ///
+    /// This is usually the same as [`ScrollBehavior::Instant`].
+    Auto,
+
+    /// Instantly scrolls to the final position.
+    Instant,
+
+    /// Smoothly scrolls from the current position to the final position.
+    Smooth,
+}
+
+impl ScrollBehavior {
+    fn into_js(self) -> web_sys::ScrollBehavior {
+        match self {
+            Self::Auto => web_sys::ScrollBehavior::Auto,
+            Self::Instant => web_sys::ScrollBehavior::Instant,
+            Self::Smooth => web_sys::ScrollBehavior::Smooth,
+        }
+    }
+}
+
+impl Default for ScrollBehavior {
+    fn default() -> Self { Self::Auto }
+}
+
+/// Scroll alignment for [`ScrollIntoView`].
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
+pub enum ScrollAlign {
+    /// Scrolls so that the element is in the top / left corner of the screen.
+    Start,
+
+    /// Scrolls so that the element is centered in the middle of the screen.
+    Center,
+
+    /// Scrolls so that the element is in the bottom / right corner of the screen.
+    End,
+
+    /// If the element is already in view, then do nothing.
+    ///
+    /// If the element is not in view, then scroll the smallest amount to make the element in view.
+    Nearest,
+}
+
+impl ScrollAlign {
+    fn into_js(self) -> web_sys::ScrollLogicalPosition {
+        match self {
+            Self::Start => web_sys::ScrollLogicalPosition::Start,
+            Self::Center => web_sys::ScrollLogicalPosition::Center,
+            Self::End => web_sys::ScrollLogicalPosition::End,
+            Self::Nearest => web_sys::ScrollLogicalPosition::Nearest,
+        }
+    }
+}
+
+/// Specifies the scroll behavior for [`DomBuilder::scroll_into_view_signal`].
+#[derive(Debug, Clone, Hash, PartialEq)]
+pub struct ScrollIntoView {
+    /// Behavior while scrolling.
+    pub behavior: ScrollBehavior,
+
+    /// Horizontal alignment.
+    pub align_x: ScrollAlign,
+
+    /// Vertical alignment.
+    pub align_y: ScrollAlign,
+}
+
+impl ScrollIntoView {
+    /// Smoothly scrolls until the element is in the middle of the screen.
+    pub fn smooth_center() -> Self {
+        Self { behavior: ScrollBehavior::Smooth, align_x: ScrollAlign::Center, align_y: ScrollAlign::Center }
+    }
+
+    /// Smoothly scrolls the minimum amount until the element is in view.
+    pub fn smooth_nearest() -> Self {
+        Self { behavior: ScrollBehavior::Smooth, align_x: ScrollAlign::Nearest, align_y: ScrollAlign::Nearest }
+    }
+
+    fn into_js(&self) -> web_sys::ScrollIntoViewOptions {
+        let output = web_sys::ScrollIntoViewOptions::new();
+        output.set_inline(self.align_x.into_js());
+        output.set_block(self.align_y.into_js());
+        output.set_behavior(self.behavior.into_js());
+        output
+    }
+}
+
+impl Default for ScrollIntoView {
+    fn default() -> Self {
+        Self { behavior: ScrollBehavior::default(), align_x: ScrollAlign::Start, align_y: ScrollAlign::Nearest }
+    }
+}
+
+// TODO better warning message for must_use
+#[must_use]
+#[derive(Debug)]
+pub struct DomBuilder<A> {
+    element: A,
+    callbacks: Callbacks,
+}
+
+impl<A> AsRef<HtmlElement> for DomBuilder<A>
+where
+    A: AsRef<HtmlElement>,
+{
+    fn as_ref(&self) -> &HtmlElement { self.element.as_ref() }
+}
+
+impl<A> DomBuilder<A>
+where
+    A: JsCast,
+{
+    #[track_caller]
+    #[inline]
+    pub fn new_html(name: &str) -> Self { Self::new(create_element(name)) }
+
+    #[track_caller]
+    #[inline]
+    pub fn new_svg(name: &str) -> Self { Self::new(create_element_ns(name, SVG_NAMESPACE)) }
+}
+
+impl<A> DomBuilder<A> {
+    #[inline]
+    #[doc(hidden)]
+    pub fn __internal_transfer_callbacks<B>(mut self, mut shadow: DomBuilder<B>) -> Self {
+        self.callbacks.after_insert.append(&mut shadow.callbacks.after_insert);
+        self.callbacks.after_remove.append(&mut shadow.callbacks.after_remove);
+        self
+    }
+
+    #[inline]
+    pub fn new(value: A) -> Self { Self { element: value, callbacks: Callbacks::new() } }
+
+    #[inline]
+    #[track_caller]
+    fn _event<T, F>(callbacks: &mut Callbacks, element: &EventTarget, options: &EventOptions, listener: F)
+    where
+        T: StaticEvent,
+        F: FnMut(T) + 'static,
+    {
+        callbacks.after_remove(on(element, options, listener));
+    }
+
+    // TODO add this to the StylesheetBuilder and ClassBuilder too
+    #[inline]
+    #[track_caller]
+    pub fn global_event_with_options<T, F>(mut self, options: &EventOptions, listener: F) -> Self
+    where
+        T: StaticEvent,
+        F: FnMut(T) + 'static,
+    {
+        WINDOW.with(|window| {
+            Self::_event(&mut self.callbacks, window, options, listener);
+        });
+        self
+    }
+
+    // TODO add this to the StylesheetBuilder and ClassBuilder too
+    #[inline]
+    #[track_caller]
+    pub fn global_event<T, F>(self, listener: F) -> Self
+    where
+        T: StaticEvent,
+        F: FnMut(T) + 'static,
+    {
+        self.global_event_with_options(&T::default_options(false), listener)
+    }
+
+    #[deprecated(since = "0.5.21", note = "Use global_event_with_options instead")]
+    #[inline]
+    #[track_caller]
+    pub fn global_event_preventable<T, F>(self, listener: F) -> Self
+    where
+        T: StaticEvent,
+        F: FnMut(T) + 'static,
+    {
+        self.global_event_with_options(&T::default_options(true), listener)
+    }
+
+    #[inline]
+    pub fn future<F>(mut self, future: F) -> Self
+    where
+        F: Future<Output = ()> + 'static,
+    {
+        self.callbacks.after_remove(DiscardOnDrop::leak(spawn_future(future)));
+        self
+    }
+
+    // TODO experiment with giving the closure &Self instead, to make it impossible to return a different element
+    #[inline]
+    pub fn apply<F>(self, f: F) -> Self
+    where
+        F: FnOnce(Self) -> Self,
+    {
+        f(self)
+    }
+
+    #[inline]
+    pub fn apply_if<F>(self, test: bool, f: F) -> Self
+    where
+        F: FnOnce(Self) -> Self,
+    {
+        if test { f(self) } else { self }
+    }
+}
+
+impl<A> DomBuilder<A>
+where
+    A: Clone,
+{
+    #[inline]
+    #[doc(hidden)]
+    pub fn __internal_element(&self) -> A { self.element.clone() }
+
+    #[deprecated(since = "0.5.1", note = "Use the with_node macro instead")]
+    #[inline]
+    pub fn with_element<B, F>(self, f: F) -> B
+    where
+        F: FnOnce(Self, A) -> B,
+    {
+        let element = self.element.clone();
+        f(self, element)
+    }
+
+    #[deprecated(since = "0.5.20", note = "Use the with_node macro instead")]
+    #[inline]
+    pub fn before_inserted<F>(self, f: F) -> Self
+    where
+        F: FnOnce(A),
+    {
+        let element = self.element.clone();
+        f(element);
+        self
+    }
+}
+
+impl<A> DomBuilder<A>
+where
+    A: Clone + 'static,
+{
+    #[inline]
+    pub fn after_inserted<F>(mut self, f: F) -> Self
+    where
+        F: FnOnce(A) + 'static,
+    {
+        let element = self.element.clone();
+        self.callbacks.after_insert(move |_| f(element));
+        self
+    }
+
+    #[inline]
+    pub fn after_removed<F>(mut self, f: F) -> Self
+    where
+        F: FnOnce(A) + 'static,
+    {
+        let element = self.element.clone();
+        self.callbacks.after_remove(FnDiscard::new(move || f(element)));
+        self
+    }
+}
+
+impl<A> DomBuilder<A>
+where
+    A: Into<Node>,
+{
+    #[inline]
+    pub fn into_dom(self) -> Dom { Dom { element: self.element.into(), callbacks: self.callbacks } }
+}
+
+impl<A> DomBuilder<A>
+where
+    A: AsRef<JsValue>,
+{
+    #[inline]
+    #[track_caller]
+    pub fn prop<B, C>(self, name: B, value: C) -> Self
+    where
+        B: MultiStr,
+        C: Into<JsValue>,
+    {
+        set_property(&self.element, &name, value);
+        self
+    }
+
+    #[deprecated(since = "0.5.24", note = "Use the `prop` method instead")]
+    #[inline]
+    #[track_caller]
+    pub fn property<B, C>(self, name: B, value: C) -> Self
+    where
+        B: MultiStr,
+        C: Into<JsValue>,
+    {
+        self.prop(name, value)
+    }
+}
+
+impl<A> DomBuilder<A>
+where
+    A: AsRef<JsValue>,
+{
+    // TODO should this inline ?
+    // TODO track_caller
+    fn set_property_signal<B, C, D>(&mut self, name: B, value: D)
+    where
+        B: MultiStr + 'static,
+        C: Into<JsValue>,
+        D: Signal<Item = C> + 'static,
+    {
+        let element = self.element.as_ref().clone();
+
+        self.callbacks.after_remove(for_each(value, move |value| {
+            set_property(&element, &name, value);
+        }));
+    }
+
+    #[inline]
+    #[track_caller]
+    pub fn prop_signal<B, C, D>(mut self, name: B, value: D) -> Self
+    where
+        B: MultiStr + 'static,
+        C: Into<JsValue>,
+        D: Signal<Item = C> + 'static,
+    {
+        self.set_property_signal(name, value);
+        self
+    }
+
+    #[deprecated(since = "0.5.24", note = "Use the `prop_signal` method instead")]
+    #[inline]
+    #[track_caller]
+    pub fn property_signal<B, C, D>(self, name: B, value: D) -> Self
+    where
+        B: MultiStr + 'static,
+        C: Into<JsValue>,
+        D: Signal<Item = C> + 'static,
+    {
+        self.prop_signal(name, value)
+    }
+}
+
+impl<A> DomBuilder<A>
+where
+    A: AsRef<EventTarget>,
+{
+    #[inline]
+    #[track_caller]
+    pub fn event_with_options<T, F>(mut self, options: &EventOptions, listener: F) -> Self
+    where
+        T: StaticEvent,
+        F: FnMut(T) + 'static,
+    {
+        Self::_event(&mut self.callbacks, &self.element.as_ref(), options, listener);
+        self
+    }
+
+    #[inline]
+    #[track_caller]
+    pub fn event<T, F>(self, listener: F) -> Self
+    where
+        T: StaticEvent,
+        F: FnMut(T) + 'static,
+    {
+        self.event_with_options(&T::default_options(false), listener)
+    }
+
+    #[deprecated(since = "0.5.21", note = "Use event_with_options instead")]
+    #[inline]
+    #[track_caller]
+    pub fn event_preventable<T, F>(self, listener: F) -> Self
+    where
+        T: StaticEvent,
+        F: FnMut(T) + 'static,
+    {
+        self.event_with_options(&T::default_options(true), listener)
+    }
+}
+
+impl<A> DomBuilder<A>
+where
+    A: AsRef<Node>,
+{
+    /// Inserts the [`Fragment`] into this [`DomBuilder`].
+    ///
+    /// See the documentation for [`fragment!`] for more details.
+    #[inline]
+    #[track_caller]
+    pub fn fragment<F>(self, fragment: &F) -> Self
+    where
+        F: Fragment,
+    {
+        let FragmentBuilder(DomBuilder { callbacks, .. }) = {
+            let element: &Node = self.element.as_ref();
+
+            fragment.apply(FragmentBuilder(DomBuilder { element, callbacks: self.callbacks }))
+        };
+
+        Self { element: self.element, callbacks }
+    }
+
+    #[inline]
+    #[track_caller]
+    pub fn text(self, value: &str) -> Self {
+        // TODO should this intern ?
+        bindings::append_child(self.element.as_ref(), &bindings::create_text_node(value));
+        self
+    }
+
+    #[inline]
+    #[track_caller]
+    pub fn text_signal<B, C>(mut self, value: C) -> Self
+    where
+        B: AsStr,
+        C: Signal<Item = B> + 'static,
+    {
+        let element = make_text_signal(&mut self.callbacks, value);
+        bindings::append_child(self.element.as_ref(), &element);
+        self
+    }
+
+    #[inline]
+    #[track_caller]
+    pub fn child<B: BorrowMut<Dom>>(mut self, mut child: B) -> Self {
+        operations::insert_children_one(self.element.as_ref(), &mut self.callbacks, child.borrow_mut());
+        self
+    }
+
+    #[inline]
+    #[track_caller]
+    pub fn child_signal<B>(mut self, child: B) -> Self
+    where
+        B: Signal<Item = Option<Dom>> + 'static,
+    {
+        operations::insert_child_signal(self.element.as_ref().clone(), &mut self.callbacks, child);
+        self
+    }
+
+    // TODO figure out how to make this owned rather than &mut
+    #[inline]
+    #[track_caller]
+    pub fn children<B: BorrowMut<Dom>, C: IntoIterator<Item = B>>(mut self, children: C) -> Self {
+        operations::insert_children_iter(self.element.as_ref(), &mut self.callbacks, children);
+        self
+    }
+
+    #[inline]
+    #[track_caller]
+    pub fn children_signal_vec<B>(mut self, children: B) -> Self
+    where
+        B: SignalVec<Item = Dom> + 'static,
+    {
+        operations::insert_children_signal_vec(self.element.as_ref().clone(), &mut self.callbacks, children);
+        self
+    }
+}
+
+impl<A> DomBuilder<A>
+where
+    A: AsRef<Element>,
+{
+    #[inline]
+    #[doc(hidden)]
+    #[track_caller]
+    pub fn __internal_shadow_root(&self, mode: ShadowRootMode) -> DomBuilder<ShadowRoot> {
+        let shadow = self.element.as_ref().attach_shadow(&ShadowRootInit::new(mode)).unwrap_js();
+        DomBuilder::new(shadow)
+    }
+
+    #[inline]
+    #[track_caller]
+    pub fn attr<B>(self, name: B, value: &str) -> Self
+    where
+        B: MultiStr,
+    {
+        let element = self.element.as_ref();
+
+        name.each(|name| {
+            bindings::set_attribute(element, intern(name), &value);
+        });
+
+        self
+    }
+
+    #[deprecated(since = "0.5.24", note = "Use the `attr` method instead")]
+    #[inline]
+    #[track_caller]
+    pub fn attribute<B>(self, name: B, value: &str) -> Self
+    where
+        B: MultiStr,
+    {
+        self.attr(name, value)
+    }
+
+    #[inline]
+    #[track_caller]
+    pub fn attr_ns<B>(self, namespace: &str, name: B, value: &str) -> Self
+    where
+        B: MultiStr,
+    {
+        let element = self.element.as_ref();
+        let namespace: &str = intern(namespace);
+
+        name.each(|name| {
+            bindings::set_attribute_ns(element, &namespace, intern(name), &value);
+        });
+
+        self
+    }
+
+    #[deprecated(since = "0.5.24", note = "Use the `attr_ns` method instead")]
+    #[inline]
+    #[track_caller]
+    pub fn attribute_namespace<B>(self, namespace: &str, name: B, value: &str) -> Self
+    where
+        B: MultiStr,
+    {
+        self.attr_ns(namespace, name, value)
+    }
+
+    #[inline]
+    #[track_caller]
+    pub fn class<B>(self, name: B) -> Self
+    where
+        B: MultiStr,
+    {
+        let classes = self.element.as_ref().class_list();
+
+        name.each(|name| {
+            bindings::add_class(&classes, intern(name));
+        });
+
+        self
+    }
+
+    // TODO make this more efficient ?
+    #[inline]
+    #[track_caller]
+    pub fn visible(self, value: bool) -> Self {
+        if value {
+            // TODO remove the class somehow ?
+            self
+        } else {
+            self.class(&*HIDDEN_CLASS)
+        }
+    }
+}
+
+impl<A> DomBuilder<A>
+where
+    A: AsRef<Element>,
+{
+    // TODO should this inline ?
+    // TODO track_caller
+    fn set_attribute_signal<B, C, D, E>(&mut self, name: B, value: E)
+    where
+        B: MultiStr + 'static,
+        C: AsStr,
+        D: OptionStr<Output = C>,
+        E: Signal<Item = D> + 'static,
+    {
+        set_option(self.element.as_ref().clone(), &mut self.callbacks, value, move |element, value| match value {
+            Some(value) => {
+                value.with_str(|value| {
+                    name.each(|name| {
+                        bindings::set_attribute(element, intern(name), &value);
+                    });
+                });
+            }
+            None => {
+                name.each(|name| {
+                    bindings::remove_attribute(element, intern(name));
+                });
+            }
+        });
+    }
+
+    #[inline]
+    #[track_caller]
+    pub fn attr_signal<B, C, D, E>(mut self, name: B, value: E) -> Self
+    where
+        B: MultiStr + 'static,
+        C: AsStr,
+        D: OptionStr<Output = C>,
+        E: Signal<Item = D> + 'static,
+    {
+        self.set_attribute_signal(name, value);
+        self
+    }
+
+    #[deprecated(since = "0.5.24", note = "Use the `attr_signal` method instead")]
+    #[inline]
+    #[track_caller]
+    pub fn attribute_signal<B, C, D, E>(self, name: B, value: E) -> Self
+    where
+        B: MultiStr + 'static,
+        C: AsStr,
+        D: OptionStr<Output = C>,
+        E: Signal<Item = D> + 'static,
+    {
+        self.attr_signal(name, value)
+    }
+
+    // TODO should this inline ?
+    // TODO track_caller
+    fn set_attribute_namespace_signal<B, C, D, E>(&mut self, namespace: &str, name: B, value: E)
+    where
+        B: MultiStr + 'static,
+        C: AsStr,
+        D: OptionStr<Output = C>,
+        E: Signal<Item = D> + 'static,
+    {
+        // TODO avoid this to_owned by using Into<Cow<'static str>>
+        let namespace: String = intern(namespace).to_owned();
+
+        set_option(self.element.as_ref().clone(), &mut self.callbacks, value, move |element, value| {
+            match value {
+                Some(value) => {
+                    value.with_str(|value| {
+                        name.each(|name| {
+                            // TODO should this intern the value ?
+                            bindings::set_attribute_ns(element, &namespace, intern(name), &value);
+                        });
+                    });
+                }
+                None => {
+                    name.each(|name| {
+                        bindings::remove_attribute_ns(element, &namespace, intern(name));
+                    });
+                }
+            }
+        });
+    }
+
+    #[inline]
+    #[track_caller]
+    pub fn attr_ns_signal<B, C, D, E>(mut self, namespace: &str, name: B, value: E) -> Self
+    where
+        B: MultiStr + 'static,
+        C: AsStr,
+        D: OptionStr<Output = C>,
+        E: Signal<Item = D> + 'static,
+    {
+        self.set_attribute_namespace_signal(namespace, name, value);
+        self
+    }
+
+    #[deprecated(since = "0.5.24", note = "Use the `attr_ns_signal` method instead")]
+    #[inline]
+    #[track_caller]
+    pub fn attribute_namespace_signal<B, C, D, E>(self, namespace: &str, name: B, value: E) -> Self
+    where
+        B: MultiStr + 'static,
+        C: AsStr,
+        D: OptionStr<Output = C>,
+        E: Signal<Item = D> + 'static,
+    {
+        self.attr_ns_signal(namespace, name, value)
+    }
+
+    // TODO should this inline ?
+    // TODO track_caller
+    fn set_class_signal<B, C>(&mut self, name: B, value: C)
+    where
+        B: MultiStr + 'static,
+        C: Signal<Item = bool> + 'static,
+    {
+        let element = self.element.as_ref().class_list();
+
+        let mut is_set = false;
+
+        self.callbacks.after_remove(for_each(value, move |value| {
+            if value {
+                if !is_set {
+                    is_set = true;
+
+                    name.each(|name| {
+                        bindings::add_class(&element, intern(name));
+                    });
+                }
+            } else {
+                if is_set {
+                    is_set = false;
+
+                    name.each(|name| {
+                        bindings::remove_class(&element, intern(name));
+                    });
+                }
+            }
+        }));
+    }
+
+    #[inline]
+    #[track_caller]
+    pub fn class_signal<B, C>(mut self, name: B, value: C) -> Self
+    where
+        B: MultiStr + 'static,
+        C: Signal<Item = bool> + 'static,
+    {
+        self.set_class_signal(name, value);
+        self
+    }
+
+    // TODO make this more efficient ?
+    #[inline]
+    #[track_caller]
+    pub fn visible_signal<B>(self, value: B) -> Self
+    where
+        B: Signal<Item = bool> + 'static,
+    {
+        self.class_signal(&*HIDDEN_CLASS, not(value))
+    }
+
+    // TODO use OptionStr ?
+    // TODO should this inline ?
+    // TODO track_caller
+    fn set_scroll_signal<B, F>(&mut self, signal: B, mut f: F)
+    where
+        B: Signal<Item = Option<i32>> + 'static,
+        F: FnMut(&Element, i32) + 'static,
+    {
+        let element: Element = self.element.as_ref().clone();
+
+        // This needs to use `after_insert` because scrolling an element before it is in the DOM has no effect
+        self.callbacks.after_insert(move |callbacks| {
+            callbacks.after_remove(for_each(signal, move |value| {
+                if let Some(value) = value {
+                    f(&element, value);
+                }
+            }));
+        });
+    }
+
+    // TODO rename to scroll_x_signal ?
+    #[inline]
+    #[track_caller]
+    pub fn scroll_left_signal<B>(mut self, signal: B) -> Self
+    where
+        B: Signal<Item = Option<i32>> + 'static,
+    {
+        // TODO bindings function for this ?
+        self.set_scroll_signal(signal, Element::set_scroll_left);
+        self
+    }
+
+    // TODO rename to scroll_y_signal ?
+    #[inline]
+    #[track_caller]
+    pub fn scroll_top_signal<B>(mut self, signal: B) -> Self
+    where
+        B: Signal<Item = Option<i32>> + 'static,
+    {
+        // TODO bindings function for this ?
+        self.set_scroll_signal(signal, Element::set_scroll_top);
+        self
+    }
+
+    // TODO should this inline ?
+    // TODO track_caller
+    fn set_scroll_into_view_signal<B>(&mut self, signal: B)
+    where
+        B: Signal<Item = Option<ScrollIntoView>> + 'static,
+    {
+        let element: Element = self.element.as_ref().clone();
+
+        // This needs to use `after_insert` because scrolling an element before it is in the DOM has no effect
+        self.callbacks.after_insert(move |callbacks| {
+            callbacks.after_remove(for_each(signal, move |options| {
+                if let Some(options) = options {
+                    element.scroll_into_view_with_scroll_into_view_options(&options.into_js());
+                }
+            }));
+        });
+    }
+
+    /// Scrolls the document to ensure that the element is in view.
+    ///
+    /// If the Signal returns `None` then it doesn't do any scrolling.
+    ///
+    /// If the Signal returns `Some` then the [`ScrollIntoView`] describes how the scrolling happens.
+    #[inline]
+    #[track_caller]
+    pub fn scroll_into_view_signal<B>(mut self, signal: B) -> Self
+    where
+        B: Signal<Item = Option<ScrollIntoView>> + 'static,
+    {
+        self.set_scroll_into_view_signal(signal);
+        self
+    }
+}
+
+impl<A> DomBuilder<A>
+where
+    A: AsRef<HtmlElement>,
+{
+    #[inline]
+    #[track_caller]
+    pub fn style<B, C>(self, name: B, value: C) -> Self
+    where
+        B: MultiStr,
+        C: MultiStr,
+    {
+        set_style(&self.element.as_ref().style(), &name, value, false);
+        self
+    }
+
+    #[inline]
+    #[track_caller]
+    pub fn style_important<B, C>(self, name: B, value: C) -> Self
+    where
+        B: MultiStr,
+        C: MultiStr,
+    {
+        set_style(&self.element.as_ref().style(), &name, value, true);
+        self
+    }
+
+    #[inline]
+    #[track_caller]
+    pub fn style_unchecked<B, C>(self, name: B, value: C) -> Self
+    where
+        B: AsStr,
+        C: AsStr,
+    {
+        name.with_str(|name| {
+            value.with_str(|value| {
+                bindings::set_style(&self.element.as_ref().style(), intern(name), value, false);
+            });
+        });
+        self
+    }
+}
+
+impl<A> DomBuilder<A>
+where
+    A: AsRef<HtmlElement>,
+{
+    #[inline]
+    #[track_caller]
+    pub fn style_signal<B, C, D, E>(mut self, name: B, value: E) -> Self
+    where
+        B: MultiStr + 'static,
+        C: MultiStr,
+        D: OptionStr<Output = C>,
+        E: Signal<Item = D> + 'static,
+    {
+        set_style_signal(self.element.as_ref().style(), &mut self.callbacks, name, value, false);
+        self
+    }
+
+    #[inline]
+    #[track_caller]
+    pub fn style_important_signal<B, C, D, E>(mut self, name: B, value: E) -> Self
+    where
+        B: MultiStr + 'static,
+        C: MultiStr,
+        D: OptionStr<Output = C>,
+        E: Signal<Item = D> + 'static,
+    {
+        set_style_signal(self.element.as_ref().style(), &mut self.callbacks, name, value, true);
+        self
+    }
+
+    #[inline]
+    #[track_caller]
+    pub fn style_unchecked_signal<B, C, D, E>(mut self, name: B, value: E) -> Self
+    where
+        B: AsStr + 'static,
+        C: AsStr,
+        D: OptionStr<Output = C>,
+        E: Signal<Item = D> + 'static,
+    {
+        set_style_unchecked_signal(self.element.as_ref().style(), &mut self.callbacks, name, value, false);
+        self
+    }
+
+    // TODO remove the `value` argument ?
+    #[inline]
+    #[track_caller]
+    pub fn focused(mut self, value: bool) -> Self {
+        let element = self.element.as_ref().clone();
+
+        // This needs to use `after_insert` because calling `.focus()` on an element before it is in the DOM has no effect
+        self.callbacks.after_insert(move |_| {
+            // TODO avoid updating if the focused state hasn't changed ?
+            if value {
+                bindings::focus(&element);
+            } else {
+                bindings::blur(&element);
+            }
+        });
+
+        self
+    }
+
+    // TODO should this inline ?
+    // TODO track_caller
+    fn set_focused_signal<B>(&mut self, value: B)
+    where
+        B: Signal<Item = bool> + 'static,
+    {
+        let element = self.element.as_ref().clone();
+
+        // This needs to use `after_insert` because calling `.focus()` on an element before it is in the DOM has no effect
+        self.callbacks.after_insert(move |callbacks| {
+            // TODO verify that this is correct under all circumstances
+            callbacks.after_remove(for_each(value, move |value| {
+                // TODO avoid updating if the focused state hasn't changed ?
+                if value {
+                    bindings::focus(&element);
+                } else {
+                    bindings::blur(&element);
+                }
+            }));
+        });
+    }
+
+    #[inline]
+    #[track_caller]
+    pub fn focused_signal<B>(mut self, value: B) -> Self
+    where
+        B: Signal<Item = bool> + 'static,
+    {
+        self.set_focused_signal(value);
+        self
+    }
+}
+
+/// Creates a raw global CSS stylesheet.
+///
+/// This accepts a single argument, which is a string containing CSS code.
+///
+/// The CSS is injected into the global scope, exactly the same as if you had
+/// imported a `.css` file.
+///
+/// It is recommended to use [`stylesheet!`] instead, because it has some additional
+/// features and safety checking.
+///
+/// But if you need to copy some existing CSS into dominator, then you can use
+/// `stylesheet_raw`.
+///
+/// # Example
+///
+/// ```rust
+/// stylesheet_raw(r#"
+///     div.foo > span:nth-child(5):hover {
+///         color: green;
+///         background-color: blue;
+///     }
+///
+///     @media only screen and (max-width: 500px) {
+///         .some-class {
+///             background-color: red;
+///         }
+///     }
+/// "#);
+/// ```
+#[inline]
+pub fn stylesheet_raw<A>(css: A)
+where
+    A: AsStr,
+{
+    css.with_str(|css| {
+        bindings::create_stylesheet(Some(css));
+    });
+}
+
+// TODO better warning message for must_use
+#[must_use]
+pub struct StylesheetBuilder {
+    element: CssStyleDeclaration,
+    callbacks: Callbacks,
+}
+
+// TODO remove the CssStyleRule when this is discarded
+impl StylesheetBuilder {
+    fn __internal_rules<A>(rules: &A) -> CssRule
+    where
+        A: MultiStr,
+    {
+        // TODO can this be made faster ?
+        // TODO somehow share this safely between threads ?
+        thread_local! {
+            static STYLESHEET: CssStyleSheet = bindings::create_stylesheet(None);
+        }
+
+        STYLESHEET.with(move |stylesheet| {
+            let mut failed = vec![];
+
+            let okay = rules.find_map(|rule| {
+                // TODO maybe intern the rule ?
+                if let Ok(declaration) = bindings::make_rule(stylesheet, rule) {
+                    Some(declaration)
+                } else {
+                    failed.push(String::from(rule));
+                    None
+                }
+            });
+
+            if let Some(okay) = okay {
+                okay
+            } else {
+                // TODO maybe make this configurable
+                panic!("selectors are incorrect:\n  {}", failed.join("\n  "));
+            }
+        })
+    }
+
+    #[doc(hidden)]
+    #[inline]
+    pub fn __internal_stylesheet<A>(rules: A) -> Self
+    where
+        A: MultiStr,
+    {
+        let element = Self::__internal_rules(&rules).unchecked_into::<CssStyleRule>();
+
+        Self { element: element.style(), callbacks: Callbacks::new() }
+    }
+
+    #[doc(hidden)]
+    #[inline]
+    pub fn __internal_new<A>(rules: A) -> Self
+    where
+        A: MultiStr,
+    {
+        Self::__internal_stylesheet(MapMultiStr::new(rules, |rule| format!("{} {{}}", rule)))
+    }
+
+    #[inline]
+    #[track_caller]
+    pub fn style<B, C>(self, name: B, value: C) -> Self
+    where
+        B: MultiStr,
+        C: MultiStr,
+    {
+        set_style(&self.element, &name, value, false);
+        self
+    }
+
+    #[inline]
+    #[track_caller]
+    pub fn style_important<B, C>(self, name: B, value: C) -> Self
+    where
+        B: MultiStr,
+        C: MultiStr,
+    {
+        set_style(&self.element, &name, value, true);
+        self
+    }
+
+    #[inline]
+    #[track_caller]
+    pub fn style_unchecked<B, C>(self, name: B, value: C) -> Self
+    where
+        B: AsStr,
+        C: AsStr,
+    {
+        name.with_str(|name| {
+            value.with_str(|value| {
+                bindings::set_style(&self.element, intern(name), value, false);
+            });
+        });
+        self
+    }
+
+    #[inline]
+    #[track_caller]
+    pub fn style_signal<B, C, D, E>(mut self, name: B, value: E) -> Self
+    where
+        B: MultiStr + 'static,
+        C: MultiStr,
+        D: OptionStr<Output = C>,
+        E: Signal<Item = D> + 'static,
+    {
+        set_style_signal(self.element.clone(), &mut self.callbacks, name, value, false);
+        self
+    }
+
+    #[inline]
+    #[track_caller]
+    pub fn style_important_signal<B, C, D, E>(mut self, name: B, value: E) -> Self
+    where
+        B: MultiStr + 'static,
+        C: MultiStr,
+        D: OptionStr<Output = C>,
+        E: Signal<Item = D> + 'static,
+    {
+        set_style_signal(self.element.clone(), &mut self.callbacks, name, value, true);
+        self
+    }
+
+    #[inline]
+    #[track_caller]
+    pub fn style_unchecked_signal<B, C, D, E>(mut self, name: B, value: E) -> Self
+    where
+        B: AsStr + 'static,
+        C: AsStr,
+        D: OptionStr<Output = C>,
+        E: Signal<Item = D> + 'static,
+    {
+        set_style_unchecked_signal(self.element.clone(), &mut self.callbacks, name, value, false);
+        self
+    }
+
+    /// Appends raw CSS code into the stylesheet.
+    ///
+    /// It is recommended to use the various `.style` methods instead.
+    ///
+    /// However, `.raw` is useful if you need to copy some existing CSS
+    /// into dominator.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// stylesheet!(".foo", {
+    ///     .raw(r#"
+    ///         background-color: green;
+    ///         width: 50px;
+    ///         position: absolute;
+    ///     "#)
+    /// })
+    /// ```
+    #[inline]
+    #[track_caller]
+    pub fn raw<B>(self, css: B) -> Self
+    where
+        B: AsStr,
+    {
+        css.with_str(|css| {
+            bindings::append_raw(&self.element, css);
+        });
+
+        self
+    }
+
+    // TODO return a Handle
+    #[inline]
+    #[track_caller]
+    #[doc(hidden)]
+    pub fn __internal_done(mut self) {
+        self.callbacks.trigger_after_insert();
+
+        // This prevents it from triggering after_remove
+        self.callbacks.leak();
+    }
+}
+
+// TODO better warning message for must_use
+#[must_use]
+pub struct ClassBuilder {
+    stylesheet: StylesheetBuilder,
+    class_name: String,
+}
+
+impl ClassBuilder {
+    #[doc(hidden)]
+    #[inline]
+    #[track_caller]
+    pub fn __internal_new(name: Option<&str>) -> Self {
+        let class_name = __internal::make_class_id(name);
+
+        Self {
+            // TODO make this more efficient ?
+            stylesheet: StylesheetBuilder::__internal_stylesheet(&format!(".{} {{}}", class_name)),
+            class_name,
+        }
+    }
+
+    #[doc(hidden)]
+    #[inline]
+    #[track_caller]
+    pub fn __internal_class_name(&self) -> &str { &self.class_name }
+
+    #[inline]
+    #[track_caller]
+    pub fn style<B, C>(mut self, name: B, value: C) -> Self
+    where
+        B: MultiStr,
+        C: MultiStr,
+    {
+        self.stylesheet = self.stylesheet.style(name, value);
+        self
+    }
+
+    #[inline]
+    #[track_caller]
+    pub fn style_important<B, C>(mut self, name: B, value: C) -> Self
+    where
+        B: MultiStr,
+        C: MultiStr,
+    {
+        self.stylesheet = self.stylesheet.style_important(name, value);
+        self
+    }
+
+    #[inline]
+    #[track_caller]
+    pub fn style_unchecked<B, C>(mut self, name: B, value: C) -> Self
+    where
+        B: AsStr,
+        C: AsStr,
+    {
+        self.stylesheet = self.stylesheet.style_unchecked(name, value);
+        self
+    }
+
+    #[inline]
+    #[track_caller]
+    pub fn style_signal<B, C, D, E>(mut self, name: B, value: E) -> Self
+    where
+        B: MultiStr + 'static,
+        C: MultiStr,
+        D: OptionStr<Output = C>,
+        E: Signal<Item = D> + 'static,
+    {
+        self.stylesheet = self.stylesheet.style_signal(name, value);
+        self
+    }
+
+    #[inline]
+    #[track_caller]
+    pub fn style_important_signal<B, C, D, E>(mut self, name: B, value: E) -> Self
+    where
+        B: MultiStr + 'static,
+        C: MultiStr,
+        D: OptionStr<Output = C>,
+        E: Signal<Item = D> + 'static,
+    {
+        self.stylesheet = self.stylesheet.style_important_signal(name, value);
+        self
+    }
+
+    #[inline]
+    #[track_caller]
+    pub fn style_unchecked_signal<B, C, D, E>(mut self, name: B, value: E) -> Self
+    where
+        B: AsStr + 'static,
+        C: AsStr,
+        D: OptionStr<Output = C>,
+        E: Signal<Item = D> + 'static,
+    {
+        self.stylesheet = self.stylesheet.style_unchecked_signal(name, value);
+        self
+    }
+
+    /// Appends raw CSS code into the class.
+    ///
+    /// It is recommended to use the various `.style` methods instead.
+    ///
+    /// However, `.raw` is useful if you need to copy some existing CSS
+    /// into dominator.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// class! {
+    ///     .raw(r#"
+    ///         background-color: green;
+    ///         width: 50px;
+    ///         position: absolute;
+    ///     "#)
+    /// }
+    /// ```
+    #[inline]
+    #[track_caller]
+    pub fn raw<B>(mut self, css: B) -> Self
+    where
+        B: AsStr,
+    {
+        self.stylesheet = self.stylesheet.raw(css);
+        self
+    }
+
+    // TODO return a Handle ?
+    #[doc(hidden)]
+    #[inline]
+    #[track_caller]
+    pub fn __internal_done(self) -> String {
+        self.stylesheet.__internal_done();
+        self.class_name
+    }
+}
+
+#[doc(hidden)]
+pub mod __internal {
+    pub use web_sys::{HtmlElement, SvgElement};
+    use {
+        crate::{
+            fragment::{BoxFragment, Fragment, FragmentBuilder},
+            traits::MultiStr,
+        },
+        std::sync::atomic::{AtomicU32, Ordering},
+    };
+
+    pub fn make_class_id(name: Option<&str>) -> String {
+        // TODO replace this with a global counter in JavaScript ?
+        // TODO can this be made more efficient ?
+        static CLASS_ID: AtomicU32 = AtomicU32::new(0);
+
+        // TODO check for overflow ?
+        // TODO should this be SeqCst ?
+        let id = CLASS_ID.fetch_add(1, Ordering::Relaxed);
+
+        let name = name.unwrap_or("__class_");
+        // TODO make this more efficient ?
+        format!("{}_{}", name, id)
+    }
+
+    pub struct Pseudo<'a, A> {
+        class_name: &'a str,
+        pseudos: A,
+    }
+
+    impl<'a, A> Pseudo<'a, A>
+    where
+        A: MultiStr,
+    {
+        #[inline]
+        pub fn new(class_name: &'a str, pseudos: A) -> Self { Self { class_name, pseudos } }
+    }
+
+    impl<'a, A> MultiStr for Pseudo<'a, A>
+    where
+        A: MultiStr,
+    {
+        #[inline]
+        fn find_map<B, F>(&self, mut f: F) -> Option<B>
+        where
+            F: FnMut(&str) -> Option<B>,
+        {
+            self.pseudos.find_map(|x| f(&format!(".{}{}", self.class_name, x)))
+        }
+    }
+
+    #[derive(Debug)]
+    struct FnFragment<F>(F);
+
+    impl<F> Fragment for FnFragment<F>
+    where
+        F: Fn(FragmentBuilder<'_>) -> FragmentBuilder<'_>,
+    {
+        #[inline]
+        fn apply<'a>(&self, dom: FragmentBuilder<'a>) -> FragmentBuilder<'a> { (self.0)(dom) }
+    }
+
+    #[inline]
+    pub fn fragment<F>(f: F) -> impl Fragment
+    where
+        F: Fn(FragmentBuilder<'_>) -> FragmentBuilder<'_>,
+    {
+        FnFragment(f)
+    }
+
+    #[inline]
+    pub fn box_fragment<F>(f: F) -> BoxFragment
+    where
+        F: Fn(FragmentBuilder<'_>) -> FragmentBuilder<'_> + Send + Sync + 'static,
+    {
+        Box::new(FnFragment(f))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use {
+        super::{DomBuilder, RefFn, text_signal},
+        crate::{ShadowRootMode, html, shadow_root, with_cfg},
+        futures_signals::signal::{SignalExt, always},
+        once_cell::sync::Lazy,
+        web_sys::HtmlElement,
+    };
+
+    #[test]
+    fn apply() {
+        let a: DomBuilder<HtmlElement> = DomBuilder::new_html("div");
+
+        fn my_mixin<A: AsRef<HtmlElement>>(builder: DomBuilder<A>) -> DomBuilder<A> { builder.style("foo", "bar") }
+
+        let _ = a.apply(my_mixin);
+    }
+
+    #[test]
+    fn children_mut() {
+        let _a: DomBuilder<HtmlElement> = DomBuilder::new_html("div").children(&mut [
+            DomBuilder::<HtmlElement>::new_html("div").into_dom(),
+            DomBuilder::<HtmlElement>::new_html("div").into_dom(),
+            DomBuilder::<HtmlElement>::new_html("div").into_dom(),
+        ]);
+    }
+
+    #[test]
+    fn children_value() {
+        let v: Vec<u32> = vec![];
+
+        let _a: DomBuilder<HtmlElement> =
+            DomBuilder::new_html("div").children(v.iter().map(|_| DomBuilder::<HtmlElement>::new_html("div").into_dom()));
+    }
+
+    #[test]
+    fn text_signal_types() {
+        let _ = text_signal(always("foo"));
+        let _ = text_signal(always("foo".to_owned()));
+        let _ = text_signal(always("foo".to_owned()).map(|x| RefFn::new(x, |x| x.as_str())));
+        // text_signal(always(Arc::new("foo")));
+        // text_signal(always(Arc::new("foo".to_owned())));
+        // text_signal(always(Rc::new("foo")));
+        // text_signal(always(Rc::new("foo".to_owned())));
+        // text_signal(always(Box::new("foo")));
+        // text_signal(always(Box::new("foo".to_owned())));
+        // text_signal(always(Cow::Borrowed(&"foo")));
+        // text_signal(always(Cow::Owned::<String>("foo".to_owned())));
+    }
+
+    #[test]
+    fn property_signal_types() {
+        let _a: DomBuilder<HtmlElement> = DomBuilder::new_html("div")
+            .prop("foo", "hi")
+            .prop("foo", 5)
+            .prop(["foo", "-webkit-foo", "-ms-foo"], "hi")
+            .prop_signal("foo", always("hi"))
+            .prop_signal("foo", always(5))
+            .prop_signal("foo", always(Some("hi")))
+            .prop_signal(["foo", "-webkit-foo", "-ms-foo"], always("hi"))
+            .prop_signal(["foo", "-webkit-foo", "-ms-foo"], always(5))
+            .prop_signal(["foo", "-webkit-foo", "-ms-foo"], always(Some("hi")));
+    }
+
+    #[test]
+    fn attribute_signal_types() {
+        let _a: DomBuilder<HtmlElement> = DomBuilder::new_html("div")
+            .attr("foo", "hi")
+            .attr(["foo", "-webkit-foo", "-ms-foo"], "hi")
+            .attr_signal("foo", always("hi"))
+            .attr_signal("foo", always(Some("hi")))
+            .attr_signal(["foo", "-webkit-foo", "-ms-foo"], always("hi"))
+            .attr_signal(["foo", "-webkit-foo", "-ms-foo"], always(Some("hi")));
+    }
+
+    #[test]
+    fn class_signal_types() {
+        let _a: DomBuilder<HtmlElement> = DomBuilder::new_html("div")
+            .class("foo")
+            .class(["foo", "-webkit-foo", "-ms-foo"])
+            .class_signal("foo", always(true))
+            .class_signal(["foo", "-webkit-foo", "-ms-foo"], always(true));
+    }
+
+    #[test]
+    fn style_signal_types() {
+        static FOO: Lazy<String> = Lazy::new(|| "foo".to_owned());
+
+        let _a: DomBuilder<HtmlElement> = DomBuilder::new_html("div")
+            .style_signal("foo", always("bar"))
+            .style_signal("foo", always("bar".to_owned()))
+            .style_signal("foo", always("bar".to_owned()).map(|x| RefFn::new(x, |x| x.as_str())))
+            .style("foo".to_owned(), "bar".to_owned())
+            .style_signal("foo".to_owned(), always("bar".to_owned()))
+            .style(&"foo".to_owned(), &"bar".to_owned())
+            //.style(Box::new("foo".to_owned()), Box::new("bar".to_owned()))
+            //.style_signal(Box::new("foo".to_owned()), always(Box::new("bar".to_owned())))
+            .style_signal(&*FOO, always(&*FOO))
+            //.style(vec!["-moz-foo", "-webkit-foo", "foo"].as_slice(), vec!["bar"].as_slice())
+            .style_signal(
+                RefFn::new(vec!["-moz-foo", "-webkit-foo", "foo"], |x| x.as_slice()),
+                always(RefFn::new(vec!["bar"], |x| x.as_slice())),
+            )
+            .style_signal(["-moz-foo", "-webkit-foo", "foo"], always("bar"))
+            .style_signal(["-moz-foo", "-webkit-foo", "foo"], always("bar".to_owned()))
+            .style_signal(
+                ["-moz-foo", "-webkit-foo", "foo"],
+                always("bar".to_owned()).map(|x| RefFn::new(x, |x| x.as_str())),
+            )
+            .style_signal(["-moz-foo", "-webkit-foo", "foo"], always(["bar", "qux"]))
+            .style_signal(["-moz-foo", "-webkit-foo", "foo"], always(["bar".to_owned(), "qux".to_owned()]))
+            //.style_signal(["-moz-foo", "-webkit-foo", "foo"], always(AsSlice::new(["foo", "bar"])))
+            //.style_signal(["-moz-foo", "-webkit-foo", "foo"], always(("bar".to_owned(), "qux".to_owned())).map(|x| RefFn::new(x, |x| AsSlice::new([x.0.as_str(), x.1.as_str()]))))
+            .style_signal("foo", always(Some("bar")))
+            .style_signal("foo", always(Some("bar".to_owned())))
+            .style_signal("foo", always("bar".to_owned()).map(|x| Some(RefFn::new(x, |x| x.as_str()))))
+            .style_signal(["-moz-foo", "-webkit-foo", "foo"], always(Some("bar")))
+            .style_signal(["-moz-foo", "-webkit-foo", "foo"], always(Some("bar".to_owned())))
+            .style_signal(
+                ["-moz-foo", "-webkit-foo", "foo"],
+                always("bar".to_owned()).map(|x| Some(RefFn::new(x, |x| x.as_str()))),
+            );
+    }
+
+    #[test]
+    fn shadow_root() {
+        let _a = html!("div", {
+            .shadow_root!(ShadowRootMode::Closed => {
+                .children(&mut [
+                    html!("span")
+                ])
+            })
+        });
+    }
+
+    #[test]
+    fn with_cfg() {
+        let _a = html!("div", {
+            .with_cfg!(target_arch = "wasm32", {
+                .attr("foo", "bar")
+            })
+
+            .with_cfg!(all(not(target_arch = "wasm32"), feature = "default"), {
+                .attr("foo", "bar")
+            })
+        });
+    }
+}

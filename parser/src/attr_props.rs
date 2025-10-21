@@ -1,26 +1,19 @@
-use std::ops::Not;
+use {
+    futures_signals::signal::{Signal, SignalExt},
+    itertools::Itertools,
+    rsx_dominator::DomBuilder,
+    std::ops::Not,
+    web_sys::{Element, HtmlElement, wasm_bindgen::JsValue},
+};
 
-use dominator::DomBuilder;
-use futures_signals::signal::Signal;
-use futures_signals::signal::SignalExt;
-use itertools::Itertools;
-use web_sys::{Element, HtmlElement, wasm_bindgen::JsValue};
-
-pub fn apply<
-    A: AsRef<HtmlElement> + AsRef<Element> + AsRef<JsValue>,
-    B: Into<String> + Clone,
-    C: Into<JsValue> + Clone,
->(
+pub fn apply<A: AsRef<HtmlElement> + AsRef<Element> + AsRef<JsValue>, B: Into<String> + Clone, C: Into<JsValue> + Clone>(
     el: DomBuilder<A>,
     key: B,
     value: C,
 ) -> DomBuilder<A> {
     match should_set_as_prop(&el, key.clone(), value.clone()) {
         true => el.prop(key.into(), value),
-        false => el.attr(
-            key.into(),
-            &Into::<JsValue>::into(value).as_string().unwrap_or_default(),
-        ),
+        false => el.attr(key.into(), &Into::<JsValue>::into(value).as_string().unwrap_or_default()),
     }
 }
 
@@ -36,15 +29,12 @@ pub fn bind<
 ) -> DomBuilder<A> {
     match should_set_as_prop(&el, key.clone(), JsValue::undefined()) {
         true => el.prop_signal(key.into(), value),
-        false => el.attr_signal(
-            key.into(),
-            value.map(|v| Into::<JsValue>::into(v).as_string().unwrap_or_default()),
-        ),
+        false => el.attr_signal(key.into(), value.map(|v| Into::<JsValue>::into(v).as_string().unwrap_or_default())),
     }
 }
 
 mod attrs {
-    use macros::json;
+    use lib_macros::json;
 
     /// Attr: &[Tags]
     pub const MAP: &'static [(&'static str, &'static [&'static str])] = &json!(
@@ -62,11 +52,7 @@ fn is_native_on(key: impl Into<String>) -> bool {
 }
 
 // https://github.com/vuejs/core/blob/958286e3f050dc707ad1af293e91bfb190bdb191/packages/runtime-dom/src/patchProp.ts#L69
-fn should_set_as_prop<A: AsRef<HtmlElement>, B: Into<String>, C: Into<JsValue>>(
-    el: &A,
-    key: B,
-    value: C,
-) -> bool {
+fn should_set_as_prop<A: AsRef<HtmlElement>, B: Into<String>, C: Into<JsValue>>(el: &A, key: B, value: C) -> bool {
     // TODO: Handle is_svg
     let el: &HtmlElement = el.as_ref();
     let key: &str = &key.into();
@@ -111,9 +97,5 @@ fn should_set_as_prop<A: AsRef<HtmlElement>, B: Into<String>, C: Into<JsValue>>(
         return false;
     }
 
-    attrs::MAP
-        .iter()
-        .find(|v| v.0 == key)
-        .is_some_and(|v| v.1.contains(&el.tag_name().to_lowercase().as_str()))
-        .not()
+    attrs::MAP.iter().find(|v| v.0 == key).is_some_and(|v| v.1.contains(&el.tag_name().to_lowercase().as_str())).not()
 }

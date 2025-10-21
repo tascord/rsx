@@ -1,5 +1,7 @@
-use proc_macro2::Literal;
-use syn::{Ident, Token, buffer::Cursor, parse::Parse};
+use {
+    proc_macro2::Literal,
+    syn::{Ident, Token, buffer::Cursor, parse::Parse},
+};
 
 pub struct JsonEnumProps {
     pub ident: Ident,
@@ -14,10 +16,7 @@ impl Parse for JsonEnumProps {
             let _ = input.parse::<Token![,]>();
         });
 
-        let path = input
-            .parse::<Literal>()
-            .expect("Expected literal for path")
-            .to_string();
+        let path = input.parse::<Literal>().expect("Expected literal for path").to_string();
 
         input.peek(Token![,]).then_some(()).inspect(|_| {
             let _ = input.parse::<Token![,]>();
@@ -31,11 +30,7 @@ impl Parse for JsonEnumProps {
             })
             .expect("Failed to get remaining tokens");
 
-        Ok(JsonEnumProps {
-            ident,
-            path,
-            js: rest,
-        })
+        Ok(JsonEnumProps { ident, path, js: rest })
     }
 }
 
@@ -46,10 +41,7 @@ pub struct JsonLines {
 
 impl Parse for JsonLines {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
-        let path = input
-            .parse::<Literal>()
-            .expect("Expected literal for path")
-            .to_string();
+        let path = input.parse::<Literal>().expect("Expected literal for path").to_string();
 
         input.peek(Token![,]).then_some(()).inspect(|_| {
             let _ = input.parse::<Token![,]>();

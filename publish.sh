@@ -1,0 +1,178 @@
+#!/bin/bash
+
+# Deps:
+# https://pypi.org/project/toml-cli/
+# https://github.com/davidrjonas/semver-cli
+
+set -e
+
+# --- Configuration ---
+
+# Define the array of target Rust package directories.
+# NOTE: These names must match the directory names.
+TARGET_PKGS=(
+    "lib-macros"
+    "parser"
+    "rsx"
+    "rsx-dominator"
+    "rsx-macro"
+) 
+
+# --- Utility Functions ---
+
+function cleanup_and_exit {
+    echo "Something went wrong. Reverting changes."
+    # Revert to the last commit to clean up any changes made by the script
+    # '|| true' prevents cleanup_and_exit from failing if 'git reset' fails
+    git reset --hard HEAD || true 
+    exit 1
+}
+
+# Trap any exit signals (e.g., Ctrl+C) and run the cleanup function
+trap cleanup_and_exit INT
+
+# --- Pre-flight Checks ---
+
+echo "--- Running Pre-flight Checks ---"
+
+# Check for required dependencies
+for cmd in toml semver-cli; do
+    if ! command -v "$cmd" &> /dev/null; then
+        echo "Error: Required command '$cmd' not found. Please install it."
+        exit 1
+    fi
+done
+
+# Check for uncommitted changes
+if [[ -n $(git status --porcelain) ]]; then
+    echo "Error: You have uncommitted changes. Please commit or stash them first."
+    exit 1
+fi
+
+# Check that all target directories exist
+for pkg in "${TARGET_PKGS[@]}"; do
+    if [ ! -d "$pkg" ]; then
+        echo "Error: Target directory '$pkg' not found."
+        exit 1
+    fi
+done
+
+# --- Get and Validate Versions ---
+
+echo "--- Validating Package Versions ---"
+
+# Get the version of the first package in the array as the "source of truth"
+FIRST_PKG="${TARGET_PKGS[0]}"
+CURRENT_VERSION=$(toml get package.version --toml-path "$FIRST_PKG/Cargo.toml")
+
+# Check all other packages against the first package's version
+for pkg in "${TARGET_PKGS[@]}"; do
+    PKG_VERSION=$(toml get package.version --toml-path "$pkg/Cargo.toml")
+    if [ "$CURRENT_VERSION" != "$PKG_VERSION" ]; then
+        echo "Error: Package '$pkg' version ($PKG_VERSION) does not match '$FIRST_PKG' version ($CURRENT_VERSION)."
+        exit 1
+    fi
+    echo "Confirmed version for $pkg is $CURRENT_VERSION."
+done
+
+# --- Get User Input ---
+
+echo "--- Determining Next Version ---"
+read -n 1 -p "What type of publish is this?: (M)ajor, (m)inor, (p)atch: " PUBLISH_TYPE
+echo
+
+NEXT_VERSION=""
+case "$PUBLISH_TYPE" in
+    M) NEXT_VERSION=$(semver-cli inc major "$CURRENT_VERSION") ;;
+    m) NEXT_VERSION=$(semver-cli inc minor "$CURRENT_VERSION") ;;
+    p) NEXT_VERSION=$(semver-cli inc patch "$CURRENT_VERSION") ;;
+    *) echo "Error: Unknown upgrade type '$PUBLISH_TYPE'."; exit 1 ;;
+esac
+
+echo "Will perform update from $CURRENT_VERSION to $NEXT_VERSION."
+
+read -p "Ok to proceed? (y/N): " CONFIRM
+if [ "$CONFIRM" != "y" ]; then
+    echo "Cancelled by user. Exiting."
+    exit 1
+fi
+
+# --- Update TOML files ---
+
+echo "--- Updating Cargo.toml files ---"
+
+# 1. Loop through all packages and update their 'package.version'
+for pkg_dir in "${TARGET_PKGS[@]}"; do
+    TOML_FILE="$pkg_dir/Cargo.toml"
+    
+    echo "Setting package.version to $NEXT_VERSION in $TOML_FILE"
+    toml set package.version "$NEXT_VERSION" --toml-path "$TOML_FILE"
+done
+
+# 2. Check for and update internal dependencies
+# Outer loop: The package whose Cargo.toml we are modifying (the dependent)
+for dependent_pkg_dir in "${TARGET_PKGS[@]}"; do
+    DEPENDENT_TOML_FILE="$dependent_pkg_dir/Cargo.toml"
+
+    # Inner loop: The packages that might be dependencies (the dependency)
+    for dependency_pkg_dir in "${TARGET_PKGS[@]}"; do
+        # Do not check a package against itself
+        if [ "$dependent_pkg_dir" == "$dependency_pkg_dir" ]; then
+            continue
+        fi
+
+        # Get the actual package name of the potential dependency
+        # This is the name used in the [dependencies] section
+        DEPENDENCY_NAME=$(toml get package.name --toml-path "$dependency_pkg_dir/Cargo.toml")
+
+        # Check if the potential dependency exists in the dependent's dependencies table
+        # toml get ... returns 0 (success) if the key exists, and 1 (failure) if not.
+        if toml get dependencies."$DEPENDENCY_NAME" --toml-path "$DEPENDENT_TOML_FILE" &> /dev/null; then
+            echo "-> Found dependency '$DEPENDENCY_NAME' in '$dependent_pkg_dir'. Updating version..."
+            
+            # Use toml set to update the version key for this dependency
+            toml set dependencies."$DEPENDENCY_NAME".version "$NEXT_VERSION" --toml-path "$DEPENDENT_TOML_FILE"
+        fi
+    done
+done
+
+
+# --- Dry Run Publish ---
+
+echo "--- Performing Dry Run of Cargo Publish ---"
+
+# Construct the list of package flags for cargo publish
+CARGO_PKGS=""
+for pkg_dir in "${TARGET_PKGS[@]}"; do
+    # Get the actual crate name from Cargo.toml
+    PKG_NAME=$(toml get package.name --toml-path "$pkg_dir/Cargo.toml")
+    CARGO_PKGS+="-p $PKG_NAME "
+done
+
+if ! cargo +nightly publish $CARGO_PKGS --dry-run --allow-dirty; then
+    echo "Cargo dry-run failed. Reverting changes and exiting."
+    cleanup_and_exit 
+fi
+
+# --- Commit and Push ---
+
+echo "--- Committing and Pushing Changes ---"
+
+echo "Committing version bump..."
+git add .
+git commit -am "Bump version $CURRENT_VERSION -> $NEXT_VERSION"
+
+echo "Pushing changes..."
+if ! git push; then
+    echo "Git push failed. Please resolve manually or run git reset --hard HEAD."
+    exit 1
+fi
+
+# --- Final Publish ---
+
+echo "--- Publishing Crates ---"
+
+# Use the same list of package flags constructed earlier
+cargo +nightly publish $CARGO_PKGS
+
+echo "✅ Publishing process complete. Version $NEXT_VERSION is now live for all packages!"
