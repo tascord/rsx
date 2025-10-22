@@ -1,15 +1,15 @@
 [package]
 name = "rustsx"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 license = "MIT"
 repository = "https://github.com/tascord/rsx"
 description = "JSX-style RSX! macro"
 
 [dependencies]
-rsx-macros = { path = "../rsx-macros", version = "0.1.0" }
-rsx-dominator = { path = "../rsx-dominator", version = "0.1.0" }
-rsx-parser = { path = "../rsx-parser", version = "0.1.0" }
+rsx-macros = { path = "../rsx-macros", version = "0.1.1" }
+rsx-dominator = { path = "../rsx-dominator", version = "0.1.1" }
+rsx-parser = { path = "../rsx-parser", version = "0.1.1" }
 futures-signals = "0.3.34"
 wasm-bindgen = "0.2"
 
