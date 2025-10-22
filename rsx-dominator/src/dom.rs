@@ -512,11 +512,6 @@ impl Dom {
     }
 }
 
-impl Dom {
-    #[inline]
-    pub fn as_html_element(&self) -> Option<HtmlElement> { self.element.dyn_ref().cloned() }
-}
-
 impl AsRef<Node> for Dom {
     fn as_ref(&self) -> &Node { &self.element }
 }
