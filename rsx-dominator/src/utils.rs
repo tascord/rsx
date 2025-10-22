@@ -20,12 +20,16 @@ pub(crate) struct RefCounter<A> {
 }
 
 impl<A> RefCounter<A> {
-    pub(crate) fn new() -> Self { Self { data: RefCell::new(None), counter: Cell::new(0) } }
+    pub(crate) fn new() -> Self {
+        Self { data: RefCell::new(None), counter: Cell::new(0) }
+    }
 
     /// Gives a reference to the data.
     ///
     /// It will be `None` if the data hasn't been initialized yet.
-    pub(crate) fn try_borrow(&self) -> Ref<'_, Option<A>> { self.data.borrow() }
+    pub(crate) fn try_borrow(&self) -> Ref<'_, Option<A>> {
+        self.data.borrow()
+    }
 
     /// Decrements the ref count, cleaning up the data if the count is 0
     pub(crate) fn decrement(&self) {
@@ -72,7 +76,9 @@ impl<A> MutableListener<A> {
         Self { mutable, listener: DiscardOnDrop::new(listener) }
     }
 
-    pub(crate) fn as_mutable(&self) -> &Mutable<A> { &self.mutable }
+    pub(crate) fn as_mutable(&self) -> &Mutable<A> {
+        &self.mutable
+    }
 }
 
 #[derive(Debug)]
@@ -155,7 +161,9 @@ pub(crate) struct ValueDiscard<A>(ManuallyDrop<A>);
 
 impl<A> ValueDiscard<A> {
     #[inline]
-    pub(crate) fn new(value: A) -> Self { ValueDiscard(ManuallyDrop::new(value)) }
+    pub(crate) fn new(value: A) -> Self {
+        ValueDiscard(ManuallyDrop::new(value))
+    }
 }
 
 impl<A> Discard for ValueDiscard<A> {
@@ -175,7 +183,9 @@ where
     A: FnOnce(),
 {
     #[inline]
-    pub(crate) fn new(f: A) -> Self { FnDiscard(f) }
+    pub(crate) fn new(f: A) -> Self {
+        FnDiscard(f)
+    }
 }
 
 impl<A> Discard for FnDiscard<A>
@@ -183,7 +193,9 @@ where
     A: FnOnce(),
 {
     #[inline]
-    fn discard(self) { self.0(); }
+    fn discard(self) {
+        self.0();
+    }
 }
 
 pub(crate) trait UnwrapJsExt<T> {
@@ -217,7 +229,9 @@ impl<T> UnwrapJsExt<T> for Result<T, JsValue> {
 #[cfg(not(debug_assertions))]
 impl<T> UnwrapJsExt<T> for Result<T, JsValue> {
     #[inline]
-    fn unwrap_js(self) -> T { self.unwrap_or_else(|e| wasm_bindgen::throw_val(e)) }
+    fn unwrap_js(self) -> T {
+        self.unwrap_or_else(|e| wasm_bindgen::throw_val(e))
+    }
 }
 
 // This needs to be a macro because #[track_caller] isn't supported in closures

@@ -127,7 +127,7 @@ fn generate_dom_code(element: &Element) -> proc_macro2::TokenStream {
     // Handle style and script tags specially - their children should be treated as raw text
     // Exception: script tags with 'src' attribute should be treated as normal HTML elements
     let has_src_attr = tag_str == "script" && element.props.iter().any(|prop| prop.name == "src");
-    
+
     if (tag_str == "style" || tag_str == "script") && !has_src_attr {
         if !element.children.is_empty() {
             let raw_content = extract_raw_content(&element.children);
@@ -256,10 +256,17 @@ fn generate_attribute_code(prop: &rsx_parser::tokens::Prop, tag_name: &str) -> p
         // to trigger browser behavior correctly (e.g., script loading)
         let should_use_prop = matches!(
             (tag_name, attr_name.as_str()),
-            ("script", "src") | ("img", "src") | ("iframe", "src") |
-            ("video", "src") | ("audio", "src") | ("source", "src") |
-            ("input", "value") | ("textarea", "value") | ("select", "value") |
-            ("input", "checked") | ("option", "selected")
+            ("script", "src")
+                | ("img", "src")
+                | ("iframe", "src")
+                | ("video", "src")
+                | ("audio", "src")
+                | ("source", "src")
+                | ("input", "value")
+                | ("textarea", "value")
+                | ("select", "value")
+                | ("input", "checked")
+                | ("option", "selected")
         );
 
         if should_use_prop {
@@ -278,7 +285,7 @@ fn generate_attribute_code(prop: &rsx_parser::tokens::Prop, tag_name: &str) -> p
 
 fn extract_raw_content(children: &[Box<rsx_parser::tokens::Node>]) -> String {
     let mut content = String::new();
-    
+
     for child in children {
         match child.as_ref() {
             rsx_parser::tokens::Node::Text(text) => {
@@ -294,7 +301,7 @@ fn extract_raw_content(children: &[Box<rsx_parser::tokens::Node>]) -> String {
                 // Convert nested elements to text representation
                 content.push('<');
                 content.push_str(&element.ident.to_string());
-                
+
                 // Add attributes
                 for prop in &element.props {
                     content.push(' ');
@@ -305,7 +312,7 @@ fn extract_raw_content(children: &[Box<rsx_parser::tokens::Node>]) -> String {
                     content.push_str(&quote!(#prop_value).to_string());
                     content.push('"');
                 }
-                
+
                 if element.children.is_empty() {
                     content.push_str("/>");
                 } else {
@@ -318,7 +325,7 @@ fn extract_raw_content(children: &[Box<rsx_parser::tokens::Node>]) -> String {
             }
         }
     }
-    
+
     content
 }
 

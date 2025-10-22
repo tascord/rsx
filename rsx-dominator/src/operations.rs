@@ -89,7 +89,9 @@ where
     }
 
     impl State {
-        fn new() -> Rc<RefCell<Self>> { Rc::new(RefCell::new(State { is_inserted: false, child: None })) }
+        fn new() -> Rc<RefCell<Self>> {
+            Rc::new(RefCell::new(State { is_inserted: false, child: None }))
+        }
 
         fn after_insert(state: Rc<RefCell<Self>>, callbacks: &mut Callbacks) {
             callbacks.after_insert(move |_| {

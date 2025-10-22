@@ -1,10 +1,9 @@
-use rustsx::use_head;
-
 use {
     futures_signals::signal::Mutable,
     rustsx::{
         dominator,
         prelude::{events::KeyUp, *},
+        use_head,
     },
     web_sys::HtmlInputElement,
 };

@@ -78,7 +78,9 @@ struct TimestampsManager {
 }
 
 impl TimestampsManager {
-    fn new() -> Self { Self { raf: None, states: vec![] } }
+    fn new() -> Self {
+        Self { raf: None, states: vec![] }
+    }
 }
 
 #[derive(Debug)]
@@ -89,7 +91,9 @@ struct TimestampsState {
 }
 
 impl TimestampsState {
-    fn new() -> Self { Self { changed: true, value: None, waker: None } }
+    fn new() -> Self {
+        Self { changed: true, value: None, waker: None }
+    }
 }
 
 #[must_use = "Signals do nothing unless polled"]
@@ -99,7 +103,9 @@ pub struct Timestamps {
 }
 
 impl Timestamps {
-    fn new() -> Self { Self { state: Arc::new(Mutex::new(TimestampsState::new())) } }
+    fn new() -> Self {
+        Self { state: Arc::new(Mutex::new(TimestampsState::new())) }
+    }
 }
 
 impl Signal for Timestamps {
@@ -197,7 +203,9 @@ pub struct AnimatedMapBroadcaster(MutableAnimation);
 impl AnimatedMapBroadcaster {
     // TODO it should return a custom type
     #[inline]
-    pub fn signal(&self) -> MutableAnimationSignal { self.0.signal() }
+    pub fn signal(&self) -> MutableAnimationSignal {
+        self.0.signal()
+    }
 }
 
 #[derive(Debug)]
@@ -440,7 +448,9 @@ impl Percentage {
     }
 
     #[inline]
-    pub fn new_unchecked(input: f64) -> Self { Percentage(input) }
+    pub fn new_unchecked(input: f64) -> Self {
+        Percentage(input)
+    }
 
     #[inline]
     pub fn map<F>(self, f: F) -> Self
@@ -465,17 +475,25 @@ impl Percentage {
     }
 
     #[inline]
-    pub fn range_inclusive(&self, low: f64, high: f64) -> f64 { range_inclusive(self.0, low, high) }
+    pub fn range_inclusive(&self, low: f64, high: f64) -> f64 {
+        range_inclusive(self.0, low, high)
+    }
 
     // TODO figure out better name
     #[inline]
-    pub fn into_f64(self) -> f64 { self.0 }
+    pub fn into_f64(self) -> f64 {
+        self.0
+    }
 
-    pub fn none_if(self, percentage: f64) -> Option<Self> { if self.0 == percentage { None } else { Some(self) } }
+    pub fn none_if(self, percentage: f64) -> Option<Self> {
+        if self.0 == percentage { None } else { Some(self) }
+    }
 }
 
 #[inline]
-fn range_inclusive(percentage: f64, low: f64, high: f64) -> f64 { low + (percentage * (high - low)) }
+fn range_inclusive(percentage: f64, low: f64, high: f64) -> f64 {
+    low + (percentage * (high - low))
+}
 
 // pub struct MutableTimestamps<F> {
 // callback: Arc<F>,
@@ -550,7 +568,9 @@ impl OnTimestampDiff {
 }
 
 impl fmt::Debug for OnTimestampDiff {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result { fmt.debug_tuple("OnTimestampDiff").finish() }
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        fmt.debug_tuple("OnTimestampDiff").finish()
+    }
 }
 
 #[derive(Debug)]
@@ -560,7 +580,9 @@ impl Signal for MutableAnimationSignal {
     type Item = Percentage;
 
     #[inline]
-    fn poll_change(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<Option<Self::Item>> { self.0.poll_change_unpin(cx) }
+    fn poll_change(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<Option<Self::Item>> {
+        self.0.poll_change_unpin(cx)
+    }
 }
 
 // TODO verify that this is Sync and Send
@@ -611,13 +633,19 @@ impl MutableAnimation {
     }
 
     #[inline]
-    pub fn new(duration: f64) -> Self { Self::new_with_initial(duration, Percentage::new_unchecked(0.0)) }
+    pub fn new(duration: f64) -> Self {
+        Self::new_with_initial(duration, Percentage::new_unchecked(0.0))
+    }
 
     #[inline]
-    fn raw_clone(&self) -> Self { Self { inner: self.inner.clone() } }
+    fn raw_clone(&self) -> Self {
+        Self { inner: self.inner.clone() }
+    }
 
     #[inline]
-    fn stop_animating(lock: &mut MutableAnimationState) { lock._animating = None; }
+    fn stop_animating(lock: &mut MutableAnimationState) {
+        lock._animating = None;
+    }
 
     fn start_animating(&self, lock: &mut MutableAnimationState) {
         if lock.playing {
@@ -715,10 +743,14 @@ impl MutableAnimation {
     }
 
     #[inline]
-    pub fn signal(&self) -> MutableAnimationSignal { MutableAnimationSignal(self.inner.value.signal()) }
+    pub fn signal(&self) -> MutableAnimationSignal {
+        MutableAnimationSignal(self.inner.value.signal())
+    }
 
     #[inline]
-    pub fn current_percentage(&self) -> Percentage { self.inner.value.get() }
+    pub fn current_percentage(&self) -> Percentage {
+        self.inner.value.get()
+    }
 }
 
 pub mod easing {
@@ -726,10 +758,14 @@ pub mod easing {
 
     // TODO should this use map rather than map_unchecked ?
     #[inline]
-    pub fn powi(p: Percentage, n: i32) -> Percentage { p.map_unchecked(|p| p.powi(n)) }
+    pub fn powi(p: Percentage, n: i32) -> Percentage {
+        p.map_unchecked(|p| p.powi(n))
+    }
 
     #[inline]
-    pub fn cubic(p: Percentage) -> Percentage { powi(p, 3) }
+    pub fn cubic(p: Percentage) -> Percentage {
+        powi(p, 3)
+    }
 
     #[inline]
     pub fn out<F>(p: Percentage, f: F) -> Percentage
@@ -862,7 +898,9 @@ pub mod easing {
             // range_inclusive(p, p4, p5)
         }
 
-        fn x_derivative(&self, p: f64) -> f64 { (3.0 * self.ax * p + 2.0 * self.bx) * p + self.cx }
+        fn x_derivative(&self, p: f64) -> f64 {
+            (3.0 * self.ax * p + 2.0 * self.bx) * p + self.cx
+        }
 
         // fn x(&self, values: (f64, f64, f64, f64)) -> f64 {
         // self.start.x * values.0 +

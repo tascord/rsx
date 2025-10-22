@@ -23,7 +23,9 @@ where
     A: Fragment + ?Sized,
 {
     #[inline]
-    fn apply<'a>(&self, dom: FragmentBuilder<'a>) -> FragmentBuilder<'a> { (*self).apply(dom) }
+    fn apply<'a>(&self, dom: FragmentBuilder<'a>) -> FragmentBuilder<'a> {
+        (*self).apply(dom)
+    }
 }
 
 impl<A> Fragment for Box<A>
@@ -31,7 +33,9 @@ where
     A: Fragment + ?Sized,
 {
     #[inline]
-    fn apply<'a>(&self, dom: FragmentBuilder<'a>) -> FragmentBuilder<'a> { (**self).apply(dom) }
+    fn apply<'a>(&self, dom: FragmentBuilder<'a>) -> FragmentBuilder<'a> {
+        (**self).apply(dom)
+    }
 }
 
 impl<A> Fragment for Rc<A>
@@ -39,7 +43,9 @@ where
     A: Fragment + ?Sized,
 {
     #[inline]
-    fn apply<'a>(&self, dom: FragmentBuilder<'a>) -> FragmentBuilder<'a> { (**self).apply(dom) }
+    fn apply<'a>(&self, dom: FragmentBuilder<'a>) -> FragmentBuilder<'a> {
+        (**self).apply(dom)
+    }
 }
 
 impl<A> Fragment for Arc<A>
@@ -47,7 +53,9 @@ where
     A: Fragment + ?Sized,
 {
     #[inline]
-    fn apply<'a>(&self, dom: FragmentBuilder<'a>) -> FragmentBuilder<'a> { (**self).apply(dom) }
+    fn apply<'a>(&self, dom: FragmentBuilder<'a>) -> FragmentBuilder<'a> {
+        (**self).apply(dom)
+    }
 }
 
 /// A boxed [`Fragment`]. See the documentation for [`box_fragment!`] for more details.
@@ -89,7 +97,9 @@ impl<'a> FragmentBuilder<'a> {
 
     #[inline]
     #[track_caller]
-    pub fn text(self, value: &str) -> Self { Self(self.0.text(value)) }
+    pub fn text(self, value: &str) -> Self {
+        Self(self.0.text(value))
+    }
 
     #[inline]
     #[track_caller]
@@ -103,7 +113,9 @@ impl<'a> FragmentBuilder<'a> {
 
     #[inline]
     #[track_caller]
-    pub fn child<B: BorrowMut<Dom>>(self, child: B) -> Self { Self(self.0.child(child)) }
+    pub fn child<B: BorrowMut<Dom>>(self, child: B) -> Self {
+        Self(self.0.child(child))
+    }
 
     #[inline]
     #[track_caller]

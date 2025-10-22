@@ -21,12 +21,18 @@ thread_local! {
     static HISTORY: History = WINDOW.with(|w| w.history().unwrap_js());
 }
 
-pub(crate) fn body() -> HtmlElement { DOCUMENT.with(|d| d.body().unwrap_throw()) }
+pub(crate) fn body() -> HtmlElement {
+    DOCUMENT.with(|d| d.body().unwrap_throw())
+}
 
-pub(crate) fn ready_state() -> String { DOCUMENT.with(|d| d.ready_state()) }
+pub(crate) fn ready_state() -> String {
+    DOCUMENT.with(|d| d.ready_state())
+}
 
 #[track_caller]
-pub(crate) fn current_url() -> String { WINDOW.with(|w| w.location().href().unwrap_js()) }
+pub(crate) fn current_url() -> String {
+    WINDOW.with(|w| w.location().href().unwrap_js())
+}
 
 #[track_caller]
 pub(crate) fn go_to_url(url: &str) {
@@ -70,24 +76,32 @@ pub(crate) fn make_rule(sheet: &CssStyleSheet, rule: &str) -> Result<CssRule, Js
     Ok(rules.get(length).unwrap_throw())
 }
 
-pub(crate) fn get_element_by_id(id: &str) -> Element { DOCUMENT.with(|d| d.get_element_by_id(id).unwrap_throw()) }
+pub(crate) fn get_element_by_id(id: &str) -> Element {
+    DOCUMENT.with(|d| d.get_element_by_id(id).unwrap_throw())
+}
 
 #[track_caller]
-pub(crate) fn create_element(name: &str) -> Element { DOCUMENT.with(|d| d.create_element(name).unwrap_js()) }
+pub(crate) fn create_element(name: &str) -> Element {
+    DOCUMENT.with(|d| d.create_element(name).unwrap_js())
+}
 
 #[track_caller]
 pub(crate) fn create_element_ns(namespace: &str, name: &str) -> Element {
     DOCUMENT.with(|d| d.create_element_ns(Some(namespace), name).unwrap_js())
 }
 
-pub(crate) fn create_text_node(value: &str) -> Text { DOCUMENT.with(|d| d.create_text_node(value)) }
+pub(crate) fn create_text_node(value: &str) -> Text {
+    DOCUMENT.with(|d| d.create_text_node(value))
+}
 
 pub(crate) fn set_text(elem: &Text, value: &str) {
     // http://jsperf.com/textnode-performance
     elem.set_data(value);
 }
 
-pub(crate) fn create_comment(value: &str) -> Comment { DOCUMENT.with(|d| d.create_comment(value)) }
+pub(crate) fn create_comment(value: &str) -> Comment {
+    DOCUMENT.with(|d| d.create_comment(value))
+}
 
 #[inline]
 pub(crate) fn create_empty_node() -> Node {
@@ -97,7 +111,9 @@ pub(crate) fn create_empty_node() -> Node {
 
 // TODO check that the attribute *actually* was changed
 #[track_caller]
-pub(crate) fn set_attribute(elem: &Element, key: &str, value: &str) { elem.set_attribute(key, value).unwrap_js(); }
+pub(crate) fn set_attribute(elem: &Element, key: &str, value: &str) {
+    elem.set_attribute(key, value).unwrap_js();
+}
 
 #[track_caller]
 pub(crate) fn set_attribute_ns(elem: &Element, namespace: &str, key: &str, value: &str) {
@@ -105,7 +121,9 @@ pub(crate) fn set_attribute_ns(elem: &Element, namespace: &str, key: &str, value
 }
 
 #[track_caller]
-pub(crate) fn remove_attribute(elem: &Element, key: &str) { elem.remove_attribute(key).unwrap_js(); }
+pub(crate) fn remove_attribute(elem: &Element, key: &str) {
+    elem.remove_attribute(key).unwrap_js();
+}
 
 #[track_caller]
 pub(crate) fn remove_attribute_ns(elem: &Element, namespace: &str, key: &str) {
@@ -113,13 +131,19 @@ pub(crate) fn remove_attribute_ns(elem: &Element, namespace: &str, key: &str) {
 }
 
 #[track_caller]
-pub(crate) fn add_class(classes: &DomTokenList, value: &str) { classes.add_1(value).unwrap_js(); }
+pub(crate) fn add_class(classes: &DomTokenList, value: &str) {
+    classes.add_1(value).unwrap_js();
+}
 
 #[track_caller]
-pub(crate) fn remove_class(classes: &DomTokenList, value: &str) { classes.remove_1(value).unwrap_js(); }
+pub(crate) fn remove_class(classes: &DomTokenList, value: &str) {
+    classes.remove_1(value).unwrap_js();
+}
 
 #[track_caller]
-pub(crate) fn get_style(style: &CssStyleDeclaration, name: &str) -> String { style.get_property_value(name).unwrap_js() }
+pub(crate) fn get_style(style: &CssStyleDeclaration, name: &str) -> String {
+    style.get_property_value(name).unwrap_js()
+}
 
 #[track_caller]
 pub(crate) fn remove_style(style: &CssStyleDeclaration, name: &str) {
@@ -134,7 +158,9 @@ pub(crate) fn set_style(style: &CssStyleDeclaration, name: &str, value: &str, im
 }
 
 #[track_caller]
-pub(crate) fn append_raw(style: &CssStyleDeclaration, css: &str) { style.set_css_text(&(style.css_text() + css)); }
+pub(crate) fn append_raw(style: &CssStyleDeclaration, css: &str) {
+    style.set_css_text(&(style.css_text() + css));
+}
 
 #[track_caller]
 pub(crate) fn insert_child_before(parent: &Node, child: &Node, other: &Node) {
@@ -143,16 +169,26 @@ pub(crate) fn insert_child_before(parent: &Node, child: &Node, other: &Node) {
 }
 
 #[track_caller]
-pub(crate) fn replace_child(parent: &Node, new: &Node, old: &Node) { parent.replace_child(new, old).unwrap_js(); }
+pub(crate) fn replace_child(parent: &Node, new: &Node, old: &Node) {
+    parent.replace_child(new, old).unwrap_js();
+}
 
 #[track_caller]
-pub(crate) fn append_child(parent: &Node, child: &Node) { parent.append_child(child).unwrap_js(); }
+pub(crate) fn append_child(parent: &Node, child: &Node) {
+    parent.append_child(child).unwrap_js();
+}
 
 #[track_caller]
-pub(crate) fn remove_child(parent: &Node, child: &Node) { parent.remove_child(child).unwrap_js(); }
+pub(crate) fn remove_child(parent: &Node, child: &Node) {
+    parent.remove_child(child).unwrap_js();
+}
 
 #[track_caller]
-pub(crate) fn focus(elem: &HtmlElement) { elem.focus().unwrap_js(); }
+pub(crate) fn focus(elem: &HtmlElement) {
+    elem.focus().unwrap_js();
+}
 
 #[track_caller]
-pub(crate) fn blur(elem: &HtmlElement) { elem.blur().unwrap_js(); }
+pub(crate) fn blur(elem: &HtmlElement) {
+    elem.blur().unwrap_js();
+}

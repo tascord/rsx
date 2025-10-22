@@ -47,10 +47,14 @@ where
     C: Fn(&A) -> &B,
 {
     #[inline]
-    pub fn new(value: A, callback: C) -> Self { Self { value, callback } }
+    pub fn new(value: A, callback: C) -> Self {
+        Self { value, callback }
+    }
 
     #[inline]
-    pub fn call_ref(&self) -> &B { (self.callback)(&self.value) }
+    pub fn call_ref(&self) -> &B {
+        (self.callback)(&self.value)
+    }
 
     // pub fn map<D, E>(self, callback: E) -> RefFn<A, impl Fn(&A) -> &D>
     // where D: ?Sized,
@@ -94,7 +98,9 @@ static HIDDEN_CLASS: Lazy<String> = Lazy::new(|| {
 });
 
 // TODO should return HtmlBodyElement ?
-pub fn body() -> HtmlElement { bindings::body() }
+pub fn body() -> HtmlElement {
+    bindings::body()
+}
 
 pub fn get_id(id: &str) -> Element {
     // TODO intern ?
@@ -209,7 +215,9 @@ impl Signal for IsWindowLoaded {
 ///
 /// This is the same as the [DOM `load` event](https://developer.mozilla.org/en-US/docs/Web/API/Window/load_event).
 #[inline]
-pub fn is_window_loaded() -> impl Signal<Item = bool> { IsWindowLoaded::Initial {} }
+pub fn is_window_loaded() -> impl Signal<Item = bool> {
+    IsWindowLoaded::Initial {}
+}
 
 /// This is returned by the [`window_size`] function.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -378,15 +386,21 @@ pub enum ColorScheme {
 
 impl ColorScheme {
     #[inline]
-    fn from_bool(matches: bool) -> Self { if matches { Self::Dark } else { Self::Light } }
+    fn from_bool(matches: bool) -> Self {
+        if matches { Self::Dark } else { Self::Light }
+    }
 
     /// Whether the color scheme is light.
     #[inline]
-    pub fn is_light(self) -> bool { matches!(self, Self::Light) }
+    pub fn is_light(self) -> bool {
+        matches!(self, Self::Light)
+    }
 
     /// Whether the color scheme is dark.
     #[inline]
-    pub fn is_dark(self) -> bool { matches!(self, Self::Dark) }
+    pub fn is_dark(self) -> bool {
+        matches!(self, Self::Dark)
+    }
 
     /// Chooses a value based on whether the color scheme is light or dark.
     ///
@@ -426,7 +440,9 @@ impl Signal for ColorSchemeSignal {
 }
 
 impl Drop for ColorSchemeSignal {
-    fn drop(&mut self) { COLOR_SCHEME.with(|x| x.decrement()); }
+    fn drop(&mut self) {
+        COLOR_SCHEME.with(|x| x.decrement());
+    }
 }
 
 /// The color scheme of the browser.
@@ -451,7 +467,9 @@ pub fn color_scheme() -> impl Signal<Item = ColorScheme> {
 
 // TODO should this intern ?
 #[inline]
-pub fn text(value: &str) -> Dom { Dom::new(bindings::create_text_node(value).into()) }
+pub fn text(value: &str) -> Dom {
+    Dom::new(bindings::create_text_node(value).into())
+}
 
 fn make_text_signal<A, B>(callbacks: &mut Callbacks, value: B) -> Text
 where
@@ -513,16 +531,22 @@ impl Dom {
 }
 
 impl AsRef<Node> for Dom {
-    fn as_ref(&self) -> &Node { &self.element }
+    fn as_ref(&self) -> &Node {
+        &self.element
+    }
 }
 
 impl Dom {
     #[inline]
-    pub fn new(element: Node) -> Self { Self { element, callbacks: Callbacks::new() } }
+    pub fn new(element: Node) -> Self {
+        Self { element, callbacks: Callbacks::new() }
+    }
 
     #[inline]
     #[track_caller]
-    pub fn empty() -> Self { Self::new(bindings::create_empty_node()) }
+    pub fn empty() -> Self {
+        Self::new(bindings::create_empty_node())
+    }
 
     #[deprecated(since = "0.5.15", note = "Store the data explicitly in a component struct instead")]
     #[inline]
@@ -724,9 +748,13 @@ pub struct EventOptions {
 }
 
 impl EventOptions {
-    pub fn bubbles() -> Self { Self { bubbles: true, preventable: false } }
+    pub fn bubbles() -> Self {
+        Self { bubbles: true, preventable: false }
+    }
 
-    pub fn preventable() -> Self { Self { bubbles: false, preventable: true } }
+    pub fn preventable() -> Self {
+        Self { bubbles: false, preventable: true }
+    }
 
     pub(crate) fn into_gloo(self) -> gloo_events::EventListenerOptions {
         gloo_events::EventListenerOptions {
@@ -766,7 +794,9 @@ impl ScrollBehavior {
 }
 
 impl Default for ScrollBehavior {
-    fn default() -> Self { Self::Auto }
+    fn default() -> Self {
+        Self::Auto
+    }
 }
 
 /// Scroll alignment for [`ScrollIntoView`].
@@ -850,7 +880,9 @@ impl<A> AsRef<HtmlElement> for DomBuilder<A>
 where
     A: AsRef<HtmlElement>,
 {
-    fn as_ref(&self) -> &HtmlElement { self.element.as_ref() }
+    fn as_ref(&self) -> &HtmlElement {
+        self.element.as_ref()
+    }
 }
 
 impl<A> DomBuilder<A>
@@ -859,11 +891,15 @@ where
 {
     #[track_caller]
     #[inline]
-    pub fn new_html(name: &str) -> Self { Self::new(create_element(name)) }
+    pub fn new_html(name: &str) -> Self {
+        Self::new(create_element(name))
+    }
 
     #[track_caller]
     #[inline]
-    pub fn new_svg(name: &str) -> Self { Self::new(create_element_ns(name, SVG_NAMESPACE)) }
+    pub fn new_svg(name: &str) -> Self {
+        Self::new(create_element_ns(name, SVG_NAMESPACE))
+    }
 }
 
 impl<A> DomBuilder<A> {
@@ -876,7 +912,9 @@ impl<A> DomBuilder<A> {
     }
 
     #[inline]
-    pub fn new(value: A) -> Self { Self { element: value, callbacks: Callbacks::new() } }
+    pub fn new(value: A) -> Self {
+        Self { element: value, callbacks: Callbacks::new() }
+    }
 
     #[inline]
     #[track_caller]
@@ -957,7 +995,9 @@ where
 {
     #[inline]
     #[doc(hidden)]
-    pub fn __internal_element(&self) -> A { self.element.clone() }
+    pub fn __internal_element(&self) -> A {
+        self.element.clone()
+    }
 
     #[deprecated(since = "0.5.1", note = "Use the with_node macro instead")]
     #[inline]
@@ -1011,7 +1051,9 @@ where
     A: Into<Node>,
 {
     #[inline]
-    pub fn into_dom(self) -> Dom { Dom { element: self.element.into(), callbacks: self.callbacks } }
+    pub fn into_dom(self) -> Dom {
+        Dom { element: self.element.into(), callbacks: self.callbacks }
+    }
 }
 
 impl<A> DomBuilder<A>
@@ -1912,7 +1954,9 @@ impl ClassBuilder {
     #[doc(hidden)]
     #[inline]
     #[track_caller]
-    pub fn __internal_class_name(&self) -> &str { &self.class_name }
+    pub fn __internal_class_name(&self) -> &str {
+        &self.class_name
+    }
 
     #[inline]
     #[track_caller]
@@ -2059,7 +2103,9 @@ pub mod __internal {
         A: MultiStr,
     {
         #[inline]
-        pub fn new(class_name: &'a str, pseudos: A) -> Self { Self { class_name, pseudos } }
+        pub fn new(class_name: &'a str, pseudos: A) -> Self {
+            Self { class_name, pseudos }
+        }
     }
 
     impl<'a, A> MultiStr for Pseudo<'a, A>
@@ -2083,7 +2129,9 @@ pub mod __internal {
         F: Fn(FragmentBuilder<'_>) -> FragmentBuilder<'_>,
     {
         #[inline]
-        fn apply<'a>(&self, dom: FragmentBuilder<'a>) -> FragmentBuilder<'a> { (self.0)(dom) }
+        fn apply<'a>(&self, dom: FragmentBuilder<'a>) -> FragmentBuilder<'a> {
+            (self.0)(dom)
+        }
     }
 
     #[inline]
@@ -2117,7 +2165,9 @@ mod tests {
     fn apply() {
         let a: DomBuilder<HtmlElement> = DomBuilder::new_html("div");
 
-        fn my_mixin<A: AsRef<HtmlElement>>(builder: DomBuilder<A>) -> DomBuilder<A> { builder.style("foo", "bar") }
+        fn my_mixin<A: AsRef<HtmlElement>>(builder: DomBuilder<A>) -> DomBuilder<A> {
+            builder.style("foo", "bar")
+        }
 
         let _ = a.apply(my_mixin);
     }
