@@ -27,7 +27,9 @@ where
     F: FnOnce(A) -> A,
 {
     #[inline]
-    fn apply(self, builder: A) -> A { self(builder) }
+    fn apply(self, builder: A) -> A {
+        self(builder)
+    }
 }
 
 // TODO figure out a way to implement this for all of AsRef / Borrow / etc.
@@ -66,7 +68,9 @@ where
 
 impl AsStr for String {
     #[inline]
-    fn as_str(&self) -> &str { self }
+    fn as_str(&self) -> &str {
+        self
+    }
 
     #[inline]
     fn with_str<A, F>(&self, f: F) -> A
@@ -79,7 +83,9 @@ impl AsStr for String {
 
 impl AsStr for str {
     #[inline]
-    fn as_str(&self) -> &str { self }
+    fn as_str(&self) -> &str {
+        self
+    }
 
     #[inline]
     fn with_str<A, F>(&self, f: F) -> A
@@ -92,7 +98,9 @@ impl AsStr for str {
 
 impl AsStr for &str {
     #[inline]
-    fn as_str(&self) -> &str { self }
+    fn as_str(&self) -> &str {
+        self
+    }
 
     #[inline]
     fn with_str<A, F>(&self, f: F) -> A
@@ -105,7 +113,9 @@ impl AsStr for &str {
 
 impl<'a> AsStr for Cow<'a, str> {
     #[inline]
-    fn as_str(&self) -> &str { self }
+    fn as_str(&self) -> &str {
+        self
+    }
 
     #[inline]
     fn with_str<A, F>(&self, f: F) -> A
@@ -121,7 +131,9 @@ where
     C: Fn(&A) -> &str,
 {
     #[inline]
-    fn as_str(&self) -> &str { self.call_ref() }
+    fn as_str(&self) -> &str {
+        self.call_ref()
+    }
 
     #[inline]
     fn with_str<B, F>(&self, f: F) -> B
@@ -145,7 +157,9 @@ impl<A, F> MapMultiStr<A, F>
 where
     F: Fn(&str) -> String,
 {
-    pub(crate) fn new(multi_str: A, callback: F) -> Self { Self { multi_str, callback } }
+    pub(crate) fn new(multi_str: A, callback: F) -> Self {
+        Self { multi_str, callback }
+    }
 }
 
 impl<M, T> MultiStr for MapMultiStr<M, T>
@@ -253,7 +267,9 @@ where
     type Output = A;
 
     #[inline]
-    fn into_option(self) -> Option<A> { Some(self) }
+    fn into_option(self) -> Option<A> {
+        Some(self)
+    }
 }
 
 impl<A> OptionStr for Option<A>
@@ -263,5 +279,7 @@ where
     type Output = A;
 
     #[inline]
-    fn into_option(self) -> Option<A> { self }
+    fn into_option(self) -> Option<A> {
+        self
+    }
 }

@@ -36,10 +36,14 @@ where
     T: AsRef<web_sys::Event>,
 {
     #[inline]
-    pub fn prevent_default(&self) { self.event.as_ref().prevent_default(); }
+    pub fn prevent_default(&self) {
+        self.event.as_ref().prevent_default();
+    }
 
     #[inline]
-    pub fn target(&self) -> Option<EventTarget> { self.event.as_ref().target() }
+    pub fn target(&self) -> Option<EventTarget> {
+        self.event.as_ref().target()
+    }
 
     #[inline]
     pub fn dyn_target<A>(&self) -> Option<A>
@@ -56,7 +60,9 @@ macro_rules! static_event_impl {
             const EVENT_TYPE: &'static str = $type;
 
             #[inline]
-            fn unchecked_from_event(event: web_sys::Event) -> Self { Self { event: event.unchecked_into() } }
+            fn unchecked_from_event(event: web_sys::Event) -> Self {
+                Self { event: event.unchecked_into() }
+            }
         }
     };
 }
@@ -70,16 +76,24 @@ macro_rules! make_event {
 
         impl $name {
             #[inline]
-            pub fn prevent_default(&self) { self.event.prevent_default(); }
+            pub fn prevent_default(&self) {
+                self.event.prevent_default();
+            }
 
             #[inline]
-            pub fn stop_propagation(&self) { self.event.stop_propagation(); }
+            pub fn stop_propagation(&self) {
+                self.event.stop_propagation();
+            }
 
             #[inline]
-            pub fn stop_immediate_propagation(&self) { self.event.stop_immediate_propagation(); }
+            pub fn stop_immediate_propagation(&self) {
+                self.event.stop_immediate_propagation();
+            }
 
             #[inline]
-            pub fn target(&self) -> Option<EventTarget> { self.event.target() }
+            pub fn target(&self) -> Option<EventTarget> {
+                self.event.target()
+            }
 
             #[inline]
             pub fn dyn_target<A>(&self) -> Option<A>
@@ -282,20 +296,28 @@ impl StaticEvent for MouseEnter {
     const EVENT_TYPE: &'static str = "mouseenter";
 
     #[inline]
-    fn unchecked_from_event(event: web_sys::Event) -> Self { Self { event: event.unchecked_into() } }
+    fn unchecked_from_event(event: web_sys::Event) -> Self {
+        Self { event: event.unchecked_into() }
+    }
 
     #[inline]
-    fn default_options(preventable: bool) -> EventOptions { EventOptions { bubbles: true, preventable } }
+    fn default_options(preventable: bool) -> EventOptions {
+        EventOptions { bubbles: true, preventable }
+    }
 }
 
 impl StaticEvent for MouseLeave {
     const EVENT_TYPE: &'static str = "mouseleave";
 
     #[inline]
-    fn unchecked_from_event(event: web_sys::Event) -> Self { Self { event: event.unchecked_into() } }
+    fn unchecked_from_event(event: web_sys::Event) -> Self {
+        Self { event: event.unchecked_into() }
+    }
 
     #[inline]
-    fn default_options(preventable: bool) -> EventOptions { EventOptions { bubbles: true, preventable } }
+    fn default_options(preventable: bool) -> EventOptions {
+        EventOptions { bubbles: true, preventable }
+    }
 }
 
 make_mouse_event!(DoubleClick => web_sys::MouseEvent);
@@ -424,7 +446,9 @@ impl Input {
         if let Some(target) = target.dyn_ref::<HtmlInputElement>() {
             // TODO check the <input> element's type ?
             Some(target.value())
-        } else { target.dyn_ref::<HtmlTextAreaElement>().map(|target| target.value()) }
+        } else {
+            target.dyn_ref::<HtmlTextAreaElement>().map(|target| target.value())
+        }
     }
 }
 
@@ -464,7 +488,9 @@ struct TouchListIter {
 }
 
 impl TouchListIter {
-    fn new(list: TouchList) -> Self { Self { index: 0, length: list.length(), list } }
+    fn new(list: TouchList) -> Self {
+        Self { index: 0, length: list.length(), list }
+    }
 }
 
 impl Iterator for TouchListIter {

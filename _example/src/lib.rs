@@ -3,6 +3,7 @@ use {
     rustsx::{
         dominator,
         prelude::{events::KeyUp, *},
+        use_head,
     },
     web_sys::HtmlInputElement,
 };
@@ -82,41 +83,39 @@ fn demo() -> dominator::Dom {
 pub fn run_example() {
     console_error_panic_hook::set_once();
 
-    // Use head BEFORE appending the main DOM element
-    // This ensures scripts/styles are loaded in the correct order
-    let head = web_sys::window().unwrap().document().unwrap().head().unwrap();
-
-    // Add custom styles
-    let style = web_sys::window().unwrap().document().unwrap().create_element("style").unwrap();
-
-    style.set_inner_html(
-        r#"
-        @keyframes gradient {
-            0%, 100% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-        }
-        .animate-gradient {
-            background-size: 200% auto;
-            animation: gradient 3s ease infinite;
-        }
-        @keyframes fade-in {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fade-in {
-            animation: fade-in 0.6s ease-out;
-        }
-        @keyframes slide-in {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-slide-in {
-            animation: slide-in 0.6s ease-out both;
-        }
-    "#,
+    let style = rsx!(
+        <style>
+            @keyframes gradient {
+                0%, 100% { background-position: 0% 50%; }
+                50% { background-position: 100% 50%; }
+            }
+            .animate-gradient {
+                background-size: 200% auto;
+                animation: gradient 3s ease infinite;
+            }
+            @keyframes fade-in {
+                from { opacity: 0; transform: translateY(-20px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            .animate-fade-in {
+                animation: fade-in 0.6s ease-out;
+            }
+            @keyframes slide-in {
+                from { opacity: 0; transform: translateY(30px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            .animate-slide-in {
+                animation: slide-in 0.6s ease-out both;
+            }
+        </style>
     );
 
-    head.append_child(&style).unwrap();
+    let script = rsx!(
+        <script src="https://cdn.tailwindcss.com"></script>
+    );
+
+    use_head(script);
+    use_head(style);
 
     let element = demo();
     let container = web_sys::window().unwrap().document().unwrap().get_element_by_id("app").unwrap();

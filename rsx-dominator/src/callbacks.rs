@@ -7,7 +7,9 @@ trait IRemove {
 
 impl<A: Discard> IRemove for A {
     #[inline]
-    fn remove(self: Box<Self>) { self.discard(); }
+    fn remove(self: Box<Self>) {
+        self.discard();
+    }
 }
 
 #[repr(transparent)]
@@ -18,11 +20,15 @@ pub(crate) struct InsertCallback(Box<dyn FnOnce(&mut Callbacks)>);
 pub(crate) struct RemoveCallback(Box<dyn IRemove>);
 
 impl std::fmt::Debug for InsertCallback {
-    fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result { write!(formatter, "InsertCallback") }
+    fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(formatter, "InsertCallback")
+    }
 }
 
 impl std::fmt::Debug for RemoveCallback {
-    fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result { write!(formatter, "RemoveCallback") }
+    fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(formatter, "RemoveCallback")
+    }
 }
 
 #[derive(Debug)]
@@ -34,7 +40,9 @@ pub(crate) struct Callbacks {
 
 impl Callbacks {
     #[inline]
-    pub(crate) fn new() -> Self { Self { after_insert: vec![], after_remove: vec![], trigger_remove: true } }
+    pub(crate) fn new() -> Self {
+        Self { after_insert: vec![], after_remove: vec![], trigger_remove: true }
+    }
 
     #[inline]
     pub(crate) fn after_insert<A: FnOnce(&mut Callbacks) + 'static>(&mut self, callback: A) {
@@ -80,7 +88,9 @@ impl Callbacks {
     }
 
     #[inline]
-    pub(crate) fn leak(&mut self) { self.trigger_remove = false; }
+    pub(crate) fn leak(&mut self) {
+        self.trigger_remove = false;
+    }
 }
 
 // TODO use DiscardOnDrop instead
@@ -95,5 +105,7 @@ impl Drop for Callbacks {
 
 impl Discard for Callbacks {
     #[inline]
-    fn discard(mut self) { self.trigger_after_remove(); }
+    fn discard(mut self) {
+        self.trigger_after_remove();
+    }
 }

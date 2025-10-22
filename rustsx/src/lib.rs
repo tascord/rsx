@@ -18,5 +18,6 @@ pub fn use_head(d: Dom) {
         .expect("Failed to get document")
         .head()
         .expect("Failed to get <head/>");
-    dominator::append_dom(&head, d);
+
+    head.append_child(d.as_ref()).expect("Failed to append to head");
 }

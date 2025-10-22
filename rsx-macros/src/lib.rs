@@ -120,25 +120,39 @@ fn generate_dom_code(element: &Element) -> proc_macro2::TokenStream {
     let mut methods = Vec::new();
 
     for prop in &element.props {
-        let attr_code = generate_attribute_code(prop);
+        let attr_code = generate_attribute_code(prop, &tag_str);
         methods.push(attr_code);
     }
 
-    // Generate children if any
-    if !element.children.is_empty() {
-        let mut children = Vec::new();
-        for child in &element.children {
-            let child_code = generate_child_code(child);
-            children.push(child_code);
-        }
+    // Handle style and script tags specially - their children should be treated as raw text
+    // Exception: script tags with 'src' attribute should be treated as normal HTML elements
+    let has_src_attr = tag_str == "script" && element.props.iter().any(|prop| prop.name == "src");
 
-        let children = children.into_iter().flatten().collect::<Vec<_>>();
-        let children_method = quote! {
-            .children(&mut [
-                #(#children),*
-            ])
-        };
-        methods.push(children_method);
+    if (tag_str == "style" || tag_str == "script") && !has_src_attr {
+        if !element.children.is_empty() {
+            let raw_content = extract_raw_content(&element.children);
+            let text_method = quote! {
+                .text(#raw_content)
+            };
+            methods.push(text_method);
+        }
+    } else {
+        // Generate children if any (normal HTML elements)
+        if !element.children.is_empty() {
+            let mut children = Vec::new();
+            for child in &element.children {
+                let child_code = generate_child_code(child);
+                children.push(child_code);
+            }
+
+            let children = children.into_iter().flatten().collect::<Vec<_>>();
+            let children_method = quote! {
+                .children(&mut [
+                    #(#children),*
+                ])
+            };
+            methods.push(children_method);
+        }
     }
 
     // Generate dominator code structure
@@ -149,7 +163,7 @@ fn generate_dom_code(element: &Element) -> proc_macro2::TokenStream {
     }
 }
 
-fn generate_attribute_code(prop: &rsx_parser::tokens::Prop) -> proc_macro2::TokenStream {
+fn generate_attribute_code(prop: &rsx_parser::tokens::Prop, tag_name: &str) -> proc_macro2::TokenStream {
     let attr_name = prop.name.to_string();
     let value = &prop.value;
 
@@ -238,11 +252,81 @@ fn generate_attribute_code(prop: &rsx_parser::tokens::Prop) -> proc_macro2::Toke
             }
         }
     } else {
-        // Regular attribute (class, id, etc.)
-        quote! {
-            .attr(#attr_name, #value)
+        // Some attributes need to be set as properties instead of attributes
+        // to trigger browser behavior correctly (e.g., script loading)
+        let should_use_prop = matches!(
+            (tag_name, attr_name.as_str()),
+            ("script", "src")
+                | ("img", "src")
+                | ("iframe", "src")
+                | ("video", "src")
+                | ("audio", "src")
+                | ("source", "src")
+                | ("input", "value")
+                | ("textarea", "value")
+                | ("select", "value")
+                | ("input", "checked")
+                | ("option", "selected")
+        );
+
+        if should_use_prop {
+            // Use .prop() for properties that need to trigger browser behavior
+            quote! {
+                .prop(#attr_name, #value)
+            }
+        } else {
+            // Use .attr() for regular HTML attributes
+            quote! {
+                .attr(#attr_name, #value)
+            }
         }
     }
+}
+
+fn extract_raw_content(children: &[Box<rsx_parser::tokens::Node>]) -> String {
+    let mut content = String::new();
+
+    for child in children {
+        match child.as_ref() {
+            rsx_parser::tokens::Node::Text(text) => {
+                content.push_str(text);
+            }
+            rsx_parser::tokens::Node::Expression(expr) => {
+                // For style/script tags, we want to preserve the expression syntax as-is
+                content.push('{');
+                content.push_str(&quote!(#expr).to_string());
+                content.push('}');
+            }
+            rsx_parser::tokens::Node::Element(element) => {
+                // Convert nested elements to text representation
+                content.push('<');
+                content.push_str(&element.ident.to_string());
+
+                // Add attributes
+                for prop in &element.props {
+                    content.push(' ');
+                    content.push_str(&prop.name.to_string());
+                    content.push('=');
+                    content.push('"');
+                    let prop_value = &prop.value;
+                    content.push_str(&quote!(#prop_value).to_string());
+                    content.push('"');
+                }
+
+                if element.children.is_empty() {
+                    content.push_str("/>");
+                } else {
+                    content.push('>');
+                    content.push_str(&extract_raw_content(&element.children));
+                    content.push_str("</");
+                    content.push_str(&element.ident.to_string());
+                    content.push('>');
+                }
+            }
+        }
+    }
+
+    content
 }
 
 fn generate_child_code(child: &rsx_parser::tokens::Node) -> Vec<proc_macro2::TokenStream> {
