@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Deps:
 # https://pypi.org/project/toml-cli/

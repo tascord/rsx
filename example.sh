@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # RSX Example Demo Script
 # This script builds and runs the _example crate with webpack

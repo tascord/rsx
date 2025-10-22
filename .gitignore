@@ -1,4 +1,10 @@
+# Nix
+.devenv/
+
+# Rust
 target/
+
+# Example
 _example/node_modules/
 _example/pkg/
 _example/_out
