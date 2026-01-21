@@ -514,6 +514,13 @@ pub struct Dom {
 }
 
 impl Dom {
+    #[inline]
+    pub fn apply_to_dom<A>(self, builder: DomBuilder<A>) -> DomBuilder<A> 
+    where A: AsRef<Node>
+    {
+        builder.child(self)
+    }
+
     pub fn text(value: impl std::fmt::Display) -> Dom {
         Dom { element: create_text_node(&value.to_string()).into(), callbacks: Callbacks::new() }
     }

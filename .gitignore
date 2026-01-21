@@ -8,3 +8,4 @@ target/
 _example/node_modules/
 _example/pkg/
 _example/_out
+node_modules/

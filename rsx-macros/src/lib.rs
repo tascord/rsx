@@ -33,10 +33,21 @@ impl<'ast> Visit<'ast> for IdentifierVisitor {
     }
 
     fn visit_pat_ident(&mut self, node: &'ast syn::PatIdent) {
-        if self.in_closure_params {
-            self.closure_params.insert(node.ident.to_string());
-        }
+        // Mark any identifier in a pattern as a local variable
+        // This includes closure parameters and let bindings
+        self.closure_params.insert(node.ident.to_string());
         syn::visit::visit_pat_ident(self, node);
+    }
+
+    fn visit_local(&mut self, node: &'ast syn::Local) {
+        // Visit init first to capture variables used in initialization
+        // before they are shadowed by the pattern
+        if let Some(init) = &node.init {
+            syn::visit::visit_expr(self, &init.expr);
+        }
+        
+        // Then visit pattern to record new local variables
+        syn::visit::visit_pat(self, &node.pat);
     }
 
     fn visit_expr_path(&mut self, node: &'ast syn::ExprPath) {
@@ -106,56 +117,54 @@ fn generate_component_code(element: &Element) -> proc_macro2::TokenStream {
 }
 
 fn generate_dom_code(element: &Element) -> proc_macro2::TokenStream {
+    use rsx_parser::tokens::Node;
     let tag_name = &element.ident;
     let tag_str = tag_name.to_string();
 
     // Check if this is a component (starts with uppercase)
     let first_char = tag_str.chars().next().unwrap_or('a');
     if first_char.is_uppercase() {
-        // This is a component - generate component instantiation code
         return generate_component_code(element);
     }
 
-    // Generate attributes for HTML elements
     let mut methods = Vec::new();
 
+    // Attributes
     for prop in &element.props {
         let attr_code = generate_attribute_code(prop, &tag_str);
         methods.push(attr_code);
     }
 
-    // Handle style and script tags specially - their children should be treated as raw text
-    // Exception: script tags with 'src' attribute should be treated as normal HTML elements
+    // Special handling for style/script
     let has_src_attr = tag_str == "script" && element.props.iter().any(|prop| prop.name == "src");
-
     if (tag_str == "style" || tag_str == "script") && !has_src_attr {
         if !element.children.is_empty() {
-            let raw_content = extract_raw_content(&element.children);
-            let text_method = quote! {
-                .text(#raw_content)
-            };
-            methods.push(text_method);
+             let raw_content = extract_raw_content(&element.children);
+             methods.push(quote! { .text(#raw_content) });
         }
     } else {
-        // Generate children if any (normal HTML elements)
-        if !element.children.is_empty() {
-            let mut children = Vec::new();
-            for child in &element.children {
-                let child_code = generate_child_code(child);
-                children.push(child_code);
+        // Children
+        for child in &element.children {
+            match child.as_ref() {
+                Node::Element(e) => {
+                    let code = generate_dom_code(e);
+                    methods.push(quote! { .child(#code) });
+                }
+                Node::Text(t) => {
+                    methods.push(quote! { .text(#t) });
+                }
+                Node::Expression(e) => {
+                    methods.push(quote! {
+                        .apply(|b| {
+                             use rustsx::ApplyToDom;
+                             #e.apply_to_dom(b)
+                        })
+                    });
+                }
             }
-
-            let children = children.into_iter().flatten().collect::<Vec<_>>();
-            let children_method = quote! {
-                .children(&mut [
-                    #(#children),*
-                ])
-            };
-            methods.push(children_method);
         }
     }
 
-    // Generate dominator code structure
     quote! {
         html!(#tag_str, {
             #(#methods)*
@@ -163,8 +172,15 @@ fn generate_dom_code(element: &Element) -> proc_macro2::TokenStream {
     }
 }
 
+
+
 fn generate_attribute_code(prop: &rsx_parser::tokens::Prop, tag_name: &str) -> proc_macro2::TokenStream {
-    let attr_name = prop.name.to_string();
+    let attr_name_raw = prop.name.to_string();
+    let attr_name = if let Some(stripped) = attr_name_raw.strip_prefix("r#") {
+        stripped.to_string()
+    } else {
+        attr_name_raw
+    };
     let value = &prop.value;
 
     // Check if this is an event handler
@@ -421,16 +437,14 @@ fn generate_child_code(child: &rsx_parser::tokens::Node) -> Vec<proc_macro2::Tok
 #[proc_macro]
 pub fn rsx(input: TokenStream) -> TokenStream {
     let input2: proc_macro2::TokenStream = input.into();
-    if let Ok(element) = syn::parse2::<Element>(input2) {
-        let dom_code = generate_dom_code(&element);
-        TokenStream::from(dom_code)
-    } else {
-        syn::Error::new(
-            proc_macro2::Span::call_site(),
-            "Invalid JSX syntax - make sure to use proper HTML-like syntax: rsx!(<tag>content</tag>)",
-        )
-        .to_compile_error()
-        .into()
+    match syn::parse2::<Element>(input2) {
+        Ok(element) => {
+            let dom_code = generate_dom_code(&element);
+            TokenStream::from(dom_code)
+        }
+        Err(e) => {
+            e.to_compile_error().into()
+        }
     }
 }
 

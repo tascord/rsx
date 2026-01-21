@@ -102,8 +102,10 @@ impl Parse for Element {
             let ident_2 = input.parse::<Ident>().map_err(|e| er!(input, "Missing element name: {:?}", e))?;
 
             if ident != ident_2 {
-                dbg!("mismatching ident");
-                panic!() // TODO
+                return Err(syn::Error::new(
+                    ident_2.span(),
+                    format!("Mismatched closing tag: expected </{}>, found </{}>", ident, ident_2)
+                ));
             }
 
             input.parse::<Token![>]>()?;
@@ -154,7 +156,21 @@ impl Parse for Node {
                                 text.push(' ');
                             }
 
-                            text.push_str(&tt.to_string());
+                            match &tt {
+                                proc_macro2::TokenTree::Literal(lit) => {
+                                    let s = lit.to_string();
+                                    if s.starts_with('"') && s.ends_with('"') {
+                                        // Strip quotes from string literals
+                                        text.push_str(&s[1..s.len()-1]);
+                                    } else {
+                                        text.push_str(&s);
+                                    }
+                                }
+                                _ => {
+                                    text.push_str(&tt.to_string());
+                                }
+                            }
+
                             prev_was_ident_or_literal = true;
                             cursor = c;
                         } else {
@@ -224,51 +240,41 @@ impl From<Element> for proc_macro2::TokenStream {
         let tag_name = &val.ident;
         let tag_str = tag_name.to_string();
 
-        // Generate attributes
         let mut methods = Vec::new();
 
         for prop in &val.props {
             let attr_name = prop.name.to_string();
             let value = &prop.value;
-            let attr_method = quote! {
+             let attr_method = quote! {
                 .attr(#attr_name, #value)
             };
             methods.push(attr_method);
         }
 
-        // Generate children if any
-        if !val.children.is_empty() {
-            let mut children = Vec::new();
-            for child in &val.children {
-                let child_code: proc_macro2::TokenStream = match child.as_ref() {
-                    Node::Element(element) => element.clone().into(),
-                    Node::Text(text) => {
-                        quote! {
-                            html!("span", {
-                                .text(#text)
-                            })
-                        }
-                    }
-                    Node::Expression(expr) => {
-                        quote! {
-                            html!("span", {
-                                .text_signal((#expr).value().map(|x| x.to_string()))
-                            })
-                        }
-                    }
-                };
-                children.push(child_code);
+        for child in &val.children {
+            match child.as_ref() {
+                Node::Element(element) => {
+                    let child_node: proc_macro2::TokenStream = element.clone().into();
+                    methods.push(quote! {
+                        .child(#child_node)
+                    });
+                }
+                Node::Text(text) => {
+                    methods.push(quote! {
+                        .text(#text)
+                    });
+                }
+                Node::Expression(expr) => {
+                    methods.push(quote! {
+                         .apply(|b| {
+                              use rustsx::ApplyToDom;
+                              #expr.apply_to_dom(b)
+                         })
+                    });
+                }
             }
-
-            let children_method = quote! {
-                .children(&mut [
-                    #(#children),*
-                ])
-            };
-            methods.push(children_method);
         }
 
-        // Generate dominator code structure
         quote! {
             html!(#tag_str, {
                 #(#methods)*
