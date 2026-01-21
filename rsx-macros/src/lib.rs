@@ -165,22 +165,46 @@ fn generate_dom_code(element: &Element) -> proc_macro2::TokenStream {
         }
     }
 
-    quote! {
-        html!(#tag_str, {
-            #(#methods)*
-        })
+    let is_svg = is_svg_tag(&tag_str);
+
+    if is_svg {
+        quote! {
+            svg!(#tag_str, {
+                #(#methods)*
+            })
+        }
+    } else {
+        quote! {
+            html!(#tag_str, {
+                #(#methods)*
+            })
+        }
     }
 }
 
-
+fn is_svg_tag(tag: &str) -> bool {
+    matches!(
+        tag,
+        "svg" | "path" | "circle" | "rect" | "line" | "polyline" | "polygon" | "g" | "defs" |
+        "mask" | "pattern" | "linearGradient" | "radialGradient" | "stop" | "text" | "tspan" |
+        "animate" | "animateTransform" | "filter" | "feGaussianBlur" | "feMerge" | "feMergeNode" |
+        "use" | "symbol" | "clipPath"
+    )
+}
 
 fn generate_attribute_code(prop: &rsx_parser::tokens::Prop, tag_name: &str) -> proc_macro2::TokenStream {
     let attr_name_raw = prop.name.to_string();
-    let attr_name = if let Some(stripped) = attr_name_raw.strip_prefix("r#") {
+    let mut attr_name = if let Some(stripped) = attr_name_raw.strip_prefix("r#") {
         stripped.to_string()
     } else {
         attr_name_raw
     };
+    
+    // Convert underscores to hyphens for SVG attributes (e.g. stroke_width -> stroke-width)
+    if is_svg_tag(tag_name) && !attr_name.starts_with("on") {
+        attr_name = attr_name.replace('_', "-");
+    }
+
     let value = &prop.value;
 
     // Check if this is an event handler

@@ -9,6 +9,7 @@ pub mod prelude {
         rsx_macros::*,
         wasm_bindgen::{self, prelude::*},
         crate::ApplyToDom, 
+        crate::Fragment,
     };
 }
 
@@ -39,5 +40,16 @@ where
 {
     fn apply_to_dom(self, builder: DomBuilder<A>) -> DomBuilder<A> {
         builder.children_signal_vec(self)
+    }
+}
+
+pub struct Fragment(pub Vec<Dom>);
+
+impl<A> ApplyToDom<A> for Fragment
+where
+    A: AsRef<web_sys::Node>,
+{
+    fn apply_to_dom(self, builder: DomBuilder<A>) -> DomBuilder<A> {
+        builder.children(self.0)
     }
 }

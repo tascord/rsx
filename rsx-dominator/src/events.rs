@@ -96,6 +96,11 @@ macro_rules! make_event {
             }
 
             #[inline]
+            pub fn current_target(&self) -> Option<EventTarget> {
+                self.event.current_target()
+            }
+
+            #[inline]
             pub fn dyn_target<A>(&self) -> Option<A>
             where
                 A: JsCast,

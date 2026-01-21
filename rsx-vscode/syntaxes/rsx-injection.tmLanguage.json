@@ -1,0 +1,275 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "RSX Injection",
+  "scopeName": "source.rsx.injection", 
+  "injectionSelector": "L:source.rust",
+  "patterns": [
+    {
+      "name": "meta.rsx.macro.rust",
+      "begin": "\\b(rsx)\\s*!\\s*\\{",
+      "end": "\\}(?=\\s*[;,)}\\]]|$)",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.macro.begin.rust"
+        },
+        "1": {
+          "name": "entity.name.function.macro.rust"
+        }
+      },
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.macro.end.rust"
+        }
+      },
+      "contentName": "meta.embedded.block.html.rsx",
+      "patterns": [
+        {
+          "include": "#rsx-content"
+        }
+      ]
+    }
+  ],
+  "repository": {
+    "rsx-content": {
+      "patterns": [
+        {
+          "include": "#html-element"
+        },
+        {
+          "include": "#rust-expression"
+        },
+        {
+          "include": "#text-content"
+        },
+        {
+          "include": "#comments"
+        }
+      ]
+    },
+    "html-element": {
+      "name": "meta.tag.html.rsx",
+      "begin": "<([a-zA-Z][a-zA-Z0-9_-]*)",
+      "end": "(/>)|((</)(\\1)(>))",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.tag.begin.html"
+        },
+        "1": {
+          "name": "entity.name.tag.html"
+        }
+      },
+      "endCaptures": {
+        "1": {
+          "name": "punctuation.definition.tag.end.html"
+        },
+        "2": {
+          "name": "punctuation.definition.tag.end.html"
+        },
+        "3": {
+          "name": "punctuation.definition.tag.begin.html"
+        },
+        "4": {
+          "name": "entity.name.tag.html"
+        },
+        "5": {
+          "name": "punctuation.definition.tag.end.html"
+        }
+      },
+      "patterns": [
+        {
+          "include": "text.html.basic#tag-stuff"
+        },
+        {
+          "include": "#html-attribute"
+        },
+        {
+          "match": ">",
+          "name": "punctuation.definition.tag.end.html"
+        },
+        {
+          "include": "#rsx-content"
+        }
+      ]
+    },
+    "html-attribute": {
+      "patterns": [
+        {
+          "name": "meta.attribute.rust-expression.html",
+          "begin": "([a-zA-Z_:][a-zA-Z0-9_:.-]*)\\s*(=)\\s*\\{",
+          "end": "\\}",
+          "beginCaptures": {
+            "1": {
+              "name": "entity.other.attribute-name.html"
+            },
+            "2": {
+              "name": "punctuation.separator.key-value.html"
+            }
+          },
+          "endCaptures": {
+            "0": {
+              "name": "punctuation.definition.rust-expression.end.rsx"
+            }
+          },
+          "contentName": "meta.embedded.rust",
+          "patterns": [
+            {
+              "include": "source.rust"
+            }
+          ]
+        },
+        {
+          "include": "text.html.basic#attribute"
+        },
+        {
+          "name": "meta.attribute.quoted.html",
+          "begin": "([a-zA-Z_:][a-zA-Z0-9_:.-]*)\\s*(=)\\s*\"",
+          "end": "\"",
+          "beginCaptures": {
+            "1": {
+              "name": "entity.other.attribute-name.html"
+            },
+            "2": {
+              "name": "punctuation.separator.key-value.html"
+            },
+            "3": {
+              "name": "punctuation.definition.string.begin.html"
+            }
+          },
+          "endCaptures": {
+            "0": {
+              "name": "punctuation.definition.string.end.html"
+            }
+          },
+          "contentName": "string.quoted.double.html",
+          "patterns": [
+            {
+              "include": "#rust-interpolation-in-string"
+            },
+            {
+              "include": "#html-entities"
+            }
+          ]
+        },
+        {
+          "name": "meta.attribute.quoted.html",
+          "begin": "([a-zA-Z_:][a-zA-Z0-9_:.-]*)\\s*(=)\\s*'",
+          "end": "'",
+          "beginCaptures": {
+            "1": {
+              "name": "entity.other.attribute-name.html"
+            },
+            "2": {
+              "name": "punctuation.separator.key-value.html"
+            },
+            "3": {
+              "name": "punctuation.definition.string.begin.html"
+            }
+          },
+          "endCaptures": {
+            "0": {
+              "name": "punctuation.definition.string.end.html"
+            }
+          },
+          "contentName": "string.quoted.single.html",
+          "patterns": [
+            {
+              "include": "#rust-interpolation-in-string"
+            },
+            {
+              "include": "#html-entities"
+            }
+          ]
+        },
+        {
+          "match": "[a-zA-Z_:][a-zA-Z0-9_:.-]*(?=\\s|>|/>)",
+          "name": "entity.other.attribute-name.html"
+        }
+      ]
+    },
+    "rust-expression": {
+      "name": "meta.embedded.rust-expression.rsx",
+      "begin": "\\{(?!\\{)",
+      "end": "\\}",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.rust-expression.begin.rsx"
+        }
+      },
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.rust-expression.end.rsx"
+        }
+      },
+      "patterns": [
+        {
+          "include": "source.rust"
+        }
+      ]
+    },
+    "rust-interpolation-in-string": {
+      "name": "meta.embedded.rust-interpolation.rsx",
+      "begin": "\\{(?!\\{)",
+      "end": "\\}",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.rust-interpolation.begin.rsx"
+        }
+      },
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.rust-interpolation.end.rsx"
+        }
+      },
+      "patterns": [
+        {
+          "include": "source.rust"
+        }
+      ]
+    },
+    "text-content": {
+      "patterns": [
+        {
+          "match": "\\{\\{",
+          "name": "constant.character.escape.rsx"
+        },
+        {
+          "match": "\\}\\}",
+          "name": "constant.character.escape.rsx"
+        },
+        {
+          "match": "[^<{\\n\\r]+",
+          "name": "text.html.rsx"
+        }
+      ]
+    },
+    "html-entities": {
+      "patterns": [
+        {
+          "match": "&[a-zA-Z0-9]+;",
+          "name": "constant.character.entity.html"
+        },
+        {
+          "match": "&#[0-9]+;",
+          "name": "constant.character.entity.html"
+        },
+        {
+          "match": "&#x[0-9a-fA-F]+;",
+          "name": "constant.character.entity.html"
+        }
+      ]
+    },
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.double-slash.rust",
+          "match": "//.*$"
+        },
+        {
+          "name": "comment.block.rust",
+          "begin": "/\\*",
+          "end": "\\*/"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "name": "rsx-syntax-support",
+  "displayName": "RSX Syntax Support",
+  "description": "Syntax highlighting for RSX (RustSX) with HTML support in rsx! macro and Rust code in single braces",
+  "version": "0.1.0",
+  "publisher": "rsx-team",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "keywords": [
+    "rust",
+    "rsx",
+    "rustsx",
+    "html",
+    "syntax",
+    "highlighting",
+    "macro",
+    "web",
+    "frontend",
+    "templating"
+  ],
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onLanguage:rust"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "rsx",
+        "aliases": [
+          "RSX",
+          "rsx"
+        ],
+        "extensions": [
+          ".rsx"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "rsx",
+        "scopeName": "source.rsx",
+        "path": "./syntaxes/rsx.tmLanguage.json"
+      },
+      {
+        "scopeName": "source.rsx.injection",
+        "path": "./syntaxes/rsx-injection.tmLanguage.json",
+        "injectTo": [
+          "source.rust"
+        ]
+      }
+    ],
+    "configuration": {
+      "title": "RSX",
+      "properties": {
+        "rsx.highlightRsxMacro": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable syntax highlighting inside rsx! macros"
+        },
+        "rsx.highlightSingleBraces": {
+          "type": "boolean",
+          "default": true,
+          "description": "Highlight Rust code in single braces within RSX"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.74.0",
+    "@types/node": "16.x",
+    "typescript": "^4.9.4"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tascord/rsx.git"
+  },
+  "license": "MIT"
+}
